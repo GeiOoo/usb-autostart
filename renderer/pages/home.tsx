@@ -1,7 +1,5 @@
-import React from 'react'
-import Head from 'next/head'
-import Link from 'next/link'
-import Image from 'next/image'
+import Head from 'next/head';
+import React from 'react';
 
 export default function HomePage() {
   const [message, setMessage] = React.useState('No message found')
@@ -19,14 +17,8 @@ export default function HomePage() {
       </Head>
       <div>
         <p>
-          ⚡ Electron + Next.js ⚡ -<Link href="/next">Go to next page</Link>
+          ⚡ Electron + Next.js ⚡
         </p>
-        <Image
-          src="/images/logo.png"
-          alt="Logo image"
-          width={256}
-          height={256}
-        />
       </div>
       <div>
         <button
