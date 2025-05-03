@@ -1,17 +1,9 @@
 import Head from 'next/head';
-import React from 'react';
+import BaseProvider from '../components/BaseProvider';
 
 export default function HomePage() {
-  const [message, setMessage] = React.useState('No message found')
-
-  React.useEffect(() => {
-    window.ipc.on('message', (message: string) => {
-      setMessage(message)
-    })
-  }, [])
-
   return (
-    <React.Fragment>
+    <BaseProvider>
       <Head>
         <title>Home - Nextron (basic-lang-typescript)</title>
       </Head>
@@ -20,16 +12,6 @@ export default function HomePage() {
           ⚡ Electron + Next.js ⚡
         </p>
       </div>
-      <div>
-        <button
-          onClick={() => {
-            window.ipc.send('message', 'Hello')
-          }}
-        >
-          Test IPC
-        </button>
-        <p>{message}</p>
-      </div>
-    </React.Fragment>
+    </BaseProvider>
   )
 }
