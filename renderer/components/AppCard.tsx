@@ -4,7 +4,6 @@ import { Delete, Edit, Pause, PlayArrow } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
-import { useState } from 'react';
 
 export type AppData = {
     name: string;
@@ -17,8 +16,6 @@ export default function AppCard({ path, onDeleteApp }: {
     path: string;
     onDeleteApp: (path: string) => void;
 }) {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
     const { data } = useQuery<AppData>({
         queryKey: ['appDetails', path],
         queryFn: async () => await window.ipc.getAppDetails(path),
@@ -38,7 +35,7 @@ export default function AppCard({ path, onDeleteApp }: {
                 title={<Typography color={data.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>}
             />
             <CardActions>
-                <Button size='small' color='error' startIcon={<Delete />} onClick={handleDelete} disabled={data.isRunning}>
+                <Button size='small' color='error' startIcon={<Delete />} onClick={handleDelete} >
                     Delete
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
