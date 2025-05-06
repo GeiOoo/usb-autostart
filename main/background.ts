@@ -2,7 +2,7 @@ import { exec, spawn } from 'child_process';
 import { app, dialog, ipcMain, Menu, nativeImage, Tray } from 'electron';
 import serve from 'electron-serve';
 import path from 'path';
-import { AppData } from '../renderer/components/AppCard';
+import { AppLiveData } from '../renderer/components/AppCard';
 import { createWindow } from './helpers';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -176,7 +176,7 @@ ipcMain.handle('open-file-dialog', async (): Promise<string[]> => {
     return result?.filePaths ?? [];
 });
 
-ipcMain.handle('get-app-details', async (event, path: string): Promise<AppData> => {
+ipcMain.handle('get-app-details', async (event, path: string): Promise<AppLiveData> => {
     const fileName = path.split('\\').pop() || 'Unknown';
     const processName = fileName.replace(/\.[^/.]+$/, "");
 
@@ -193,8 +193,6 @@ ipcMain.handle('get-app-details', async (event, path: string): Promise<AppData> 
     }
 
     return {
-        name: fileName,
-        path,
         icon: await app.getFileIcon(path, { size: 'large' }),
         isRunning
     };

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { AppData } from '../renderer/components/AppCard';
+import { AppLiveData } from '../renderer/components/AppCard';
 
 const handler = {
     send(channel: string, value: unknown) {
@@ -17,7 +17,7 @@ const handler = {
     openFileDialog(): Promise<string[]> {
         return ipcRenderer.invoke('open-file-dialog');
     },
-    getAppDetails(path: string): Promise<AppData> {
+    getAppDetails(path: string): Promise<AppLiveData> {
         return ipcRenderer.invoke('get-app-details', path);
     },
     launchApp(path: string): Promise<void> {

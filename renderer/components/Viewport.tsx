@@ -1,11 +1,11 @@
 import { Add, PlayArrow, Stop } from '@mui/icons-material';
 import { Button, Stack } from '@mui/material';
 import useLocalStorageState from '../hooks/useLocalStorageState';
-import AppCard from './AppCard';
+import AppCard, { AppMetaData } from './AppCard';
 import UsbSelect from './UsbSelect';
 
 export default function Viewport() {
-    const [appPathList, setAppPathList] = useLocalStorageState<string[]>([], 'appPathList');
+    const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
 
     return (
         <Stack gap={2} padding={2} height={'100vh'}>
@@ -16,29 +16,35 @@ export default function Viewport() {
                 <Button startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
             </Stack>
             <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'}>
-                {appPathList.map(path => <AppCard key={path} path={path} onDeleteApp={handleDeleteApp} />)}
+                {appDataList.map(data => <AppCard key={data.path} data={data} onDeleteApp={handleDeleteApp} />)}
             </Stack>
         </Stack>
     );
 
     async function handleFileSelect() {
         const paths = await window.ipc.openFileDialog();
-        setAppPathList(prev => [...prev, ...paths.filter(p => !prev.includes(p))]);
+        setAppDataList(prev => {
+            const newPaths = paths.filter(p => !prev.some(app => app.path === p));
+            return [...prev, ...newPaths.map(path => ({
+                name: path.split('\\').pop() || '',
+                path
+            }))];
+        });
     };
 
     function handleDeleteApp(path: string) {
-        setAppPathList(prev => prev.filter(p => p !== path));
+        setAppDataList(prev => prev.filter(app => app.path !== path));
     }
 
     async function handleStartAll() {
-        for (const path of appPathList) {
-            await window.ipc.launchApp(path);
+        for (const data of appDataList) {
+            await window.ipc.launchApp(data.path);
         }
     }
 
     async function handleStopAll() {
-        for (const path of appPathList) {
-            await window.ipc.stopApp(path);
+        for (const data of appDataList) {
+            await window.ipc.stopApp(data.path);
         }
     }
 }

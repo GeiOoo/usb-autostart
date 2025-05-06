@@ -5,18 +5,23 @@ import { Button, Card, CardActions, CardHeader, IconButton, Skeleton, Stack, Too
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 
-export type AppData = {
+export type AppMetaData = {
     name: string;
     path: string;
+};
+
+export type AppLiveData = {
     icon: Electron.NativeImage;
     isRunning: boolean;
 };
 
-export default function AppCard({ path, onDeleteApp }: {
-    path: string;
+export default function AppCard({ data, onDeleteApp }: {
+    data: AppMetaData;
     onDeleteApp: (path: string) => void;
 }) {
-    const { data, isLoading } = useQuery({
+    const { path } = data;
+
+    const { data: processData, isLoading } = useQuery({
         queryKey: ['appDetails', path],
         queryFn: async () => await window.ipc.getAppDetails(path),
         refetchOnWindowFocus: false,
@@ -33,11 +38,11 @@ export default function AppCard({ path, onDeleteApp }: {
     const pathSskeletonLengthInPixel = Math.min(path.length * 7, 240);
 
     return (
-        <Stack component={Card} key={path} raised={data?.isRunning}>
+        <Stack component={Card} key={path} raised={processData?.isRunning}>
             <CardHeader
                 action={<IconButton size='small' color='error' onClick={handleDelete} ><Delete /></IconButton>}
-                avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={data.icon} height={32} width={32} />}
-                title={isLoading ? <Skeleton width={nameSkeletonLengthInPixel} height={28} /> : <Typography color={data.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>}
+                avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={processData.icon} height={32} width={32} />}
+                title={isLoading ? <Skeleton width={nameSkeletonLengthInPixel} height={28} /> : <Typography color={processData.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>}
                 subheader={isLoading ?
                     <Skeleton width={pathSskeletonLengthInPixel} height={20} />
                     :
@@ -63,7 +68,7 @@ export default function AppCard({ path, onDeleteApp }: {
                     color='primary'
                     variant='outlined'
                     fullWidth
-                    {...data?.isRunning ? {
+                    {...processData?.isRunning ? {
                         children: 'Stop',
                         startIcon: <Stop />,
                         onClick: () => window.ipc.stopApp(path)
