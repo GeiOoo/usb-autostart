@@ -6,6 +6,34 @@ import { AppData } from '../renderer/components/AppCard';
 import { createWindow } from './helpers';
 
 const isProd = process.env.NODE_ENV === 'production';
+const APP_NAME = 'USB AutoStart';
+
+// Function to enable/disable autostart
+async function setAutoStart(enable: boolean): Promise<void> {
+    const appPath = app.getPath('exe');
+    const command = enable ?
+        `REG ADD "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /t REG_SZ /F /D "${appPath}"` :
+        `REG DELETE "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /F`;
+
+    return new Promise((resolve, reject) => {
+        exec(command, (error) => {
+            if (error) reject(error);
+            else resolve();
+        });
+    });
+}
+
+// Function to check if autostart is enabled
+async function isAutoStartEnabled(): Promise<boolean> {
+    return new Promise((resolve) => {
+        exec(
+            `REG QUERY "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}"`,
+            (error) => {
+                resolve(!error); // If there's no error, the registry key exists
+            }
+        );
+    });
+}
 
 if (isProd) {
     serve({ directory: 'app' });
@@ -58,22 +86,47 @@ let mainWindow: ReturnType<typeof createWindow>;
         tray = new Tray(icon);
     }
 
-    const contextMenu = Menu.buildFromTemplate([
-        {
-            label: 'Show Window',
-            click: () => mainWindow.show()
-        },
-        {
-            label: 'Quit',
-            click: () => {
-                mainWindow.destroy();
-                app.quit();
-            }
-        }
-    ]);
+    // Get initial autostart state
+    const autoStartEnabled = await isAutoStartEnabled();
 
-    tray.setToolTip('USB-AutoStart');
-    tray.setContextMenu(contextMenu);
+    const updateContextMenu = async () => {
+        const autoStartEnabled = await isAutoStartEnabled();
+        const contextMenu = Menu.buildFromTemplate([
+            {
+                label: 'Show Window',
+                click: () => mainWindow.show()
+            },
+            {
+                label: 'Start with Windows',
+                type: 'checkbox',
+                checked: autoStartEnabled,
+                click: async () => {
+                    try {
+                        await setAutoStart(!autoStartEnabled);
+                        // Update the menu to reflect the new state
+                        updateContextMenu();
+                    } catch (error) {
+                        dialog.showErrorBox('Error', 'Failed to update startup settings');
+                    }
+                }
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Quit',
+                click: () => {
+                    mainWindow.destroy();
+                    app.quit();
+                }
+            }
+        ]);
+
+        tray.setContextMenu(contextMenu);
+    };
+
+    // Initial menu setup
+    await updateContextMenu();
 
     // Handle tray icon click
     tray.on('click', () => {
@@ -183,4 +236,13 @@ ipcMain.handle('stop-app', async (_event, path: string) => {
             resolve(null);
         });
     });
+});
+
+// Add new IPC handlers for autostart
+ipcMain.handle('is-autostart-enabled', async () => {
+    return isAutoStartEnabled();
+});
+
+ipcMain.handle('set-autostart', async (_event, enable: boolean) => {
+    return setAutoStart(enable);
 });

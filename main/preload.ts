@@ -26,6 +26,12 @@ const handler = {
     stopApp(path: string): Promise<void> {
         return ipcRenderer.invoke('stop-app', path);
     },
+    isAutoStartEnabled(): Promise<boolean> {
+        return ipcRenderer.invoke('is-autostart-enabled');
+    },
+    setAutoStart(enable: boolean): Promise<void> {
+        return ipcRenderer.invoke('set-autostart', enable);
+    }
 };
 
 contextBridge.exposeInMainWorld('ipc', handler);
