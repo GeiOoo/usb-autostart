@@ -13,6 +13,22 @@ if (isProd) {
     app.setPath('userData', `${app.getPath('userData')} (development)`);
 }
 
+// Ensure single instance
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
+        // Someone tried to run a second instance, we should focus our window.
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.show();
+            mainWindow.focus();
+        }
+    });
+}
+
 let tray: Tray | null = null;
 let mainWindow: ReturnType<typeof createWindow>;
 
