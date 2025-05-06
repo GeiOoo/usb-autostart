@@ -21,6 +21,12 @@ export default function AppCard({ path, onDeleteApp }: {
         queryFn: async () => await window.ipc.getAppDetails(path),
         refetchOnWindowFocus: false,
         refetchInterval: 500,
+        select: data => {
+            return {
+                ...data,
+                icon: data.icon.toDataURL()
+            };
+        }
     });
 
     const nameSkeletonLengthInPixel = path.split('\\').pop()?.length * 8 || 0;
@@ -30,7 +36,7 @@ export default function AppCard({ path, onDeleteApp }: {
         <Stack component={Card} key={path} raised={data?.isRunning}>
             <CardHeader
                 action={<IconButton size='small' color='error' onClick={handleDelete} ><Delete /></IconButton>}
-                avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={data.icon.toDataURL()} height={32} width={32} />}
+                avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={data.icon} height={32} width={32} />}
                 title={isLoading ? <Skeleton width={nameSkeletonLengthInPixel} height={28} /> : <Typography color={data.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>}
                 subheader={isLoading ?
                     <Skeleton width={pathSskeletonLengthInPixel} height={20} />
