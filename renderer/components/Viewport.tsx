@@ -15,7 +15,7 @@ export default function Viewport() {
                 <Button startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
                 <Button startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
             </Stack>
-            <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'} justifyContent={'space-around'}>
+            <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'} justifyContent={'center'}>
                 {appPathList.map(path => <AppCard key={path} path={path} onDeleteApp={handleDeleteApp} />)}
             </Stack>
         </Stack>
