@@ -1,5 +1,5 @@
-import { Add } from '@mui/icons-material';
-import { Button, Stack } from '@mui/material';
+import { Add, PlayArrow, Stop } from '@mui/icons-material';
+import { Box, Button, Stack } from '@mui/material';
 import useLocalStorageState from '../hooks/useLocalStorageState';
 import AppCard from './AppCard';
 
@@ -8,7 +8,12 @@ export default function Viewport() {
 
     return (
         <Stack spacing={2} padding={2}>
-            <Button startIcon={<Add />} sx={{ alignSelf: 'start' }} variant='outlined' onClick={handleFileSelect}>Add App</Button>
+            <Stack direction="row" spacing={2}>
+                <Button startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
+                <Box sx={{ flexGrow: 1 }} />
+                <Button startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
+                <Button startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
+            </Stack>
             <Stack direction={'row'} spacing={2}>
                 {appPathList.map(path => <AppCard key={path} path={path} onDeleteApp={handleDeleteApp} />)}
             </Stack>
@@ -22,5 +27,17 @@ export default function Viewport() {
 
     function handleDeleteApp(path: string) {
         setAppPathList(prev => prev.filter(p => p !== path));
+    }
+
+    async function handleStartAll() {
+        for (const path of appPathList) {
+            await window.ipc.launchApp(path);
+        }
+    }
+
+    async function handleStopAll() {
+        for (const path of appPathList) {
+            await window.ipc.stopApp(path);
+        }
     }
 }
