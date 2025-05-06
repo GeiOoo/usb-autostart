@@ -8,8 +8,7 @@
     "scripts": {
         "dev": "nextron",
         "build": "nextron build",
-        "postinstall": "electron-builder install-app-deps",
-        "build&install": "npm run build && '.\\dist\\USB AutoStart Setup 1.0.0.exe'"
+        "postinstall": "electron-builder install-app-deps"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
