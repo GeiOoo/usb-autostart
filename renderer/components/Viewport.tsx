@@ -1,7 +1,8 @@
 import { Add, PlayArrow, Stop } from '@mui/icons-material';
-import { Box, Button, Stack } from '@mui/material';
+import { Button, Stack } from '@mui/material';
 import useLocalStorageState from '../hooks/useLocalStorageState';
 import AppCard from './AppCard';
+import UsbSelect from './UsbSelect';
 
 export default function Viewport() {
     const [appPathList, setAppPathList] = useLocalStorageState<string[]>([], 'appPathList');
@@ -10,7 +11,7 @@ export default function Viewport() {
         <Stack spacing={2} padding={2}>
             <Stack direction="row" spacing={2}>
                 <Button startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
-                <Box sx={{ flexGrow: 1 }} />
+                <UsbSelect />
                 <Button startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
                 <Button startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
             </Stack>

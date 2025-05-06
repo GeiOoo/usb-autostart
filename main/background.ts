@@ -13,6 +13,7 @@ if (isProd) {
     app.setPath('userData', `${app.getPath('userData')} (development)`);
 }
 
+
 ; (async () => {
     await app.whenReady();
 
@@ -22,6 +23,14 @@ if (isProd) {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
+    });
+
+    // Set up USB device permission handler 
+    mainWindow.webContents.session.setDevicePermissionHandler((details) => {
+        if (details.deviceType === 'usb') {
+            return true; // Allow USB device access
+        }
+        return false;
     });
 
     if (isProd) {
