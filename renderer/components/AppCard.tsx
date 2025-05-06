@@ -1,7 +1,7 @@
 'use client';
 
 import { Delete, Edit, Pause, PlayArrow } from '@mui/icons-material';
-import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Typography } from '@mui/material';
+import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Skeleton, Stack, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 
@@ -16,12 +16,22 @@ export default function AppCard({ path, onDeleteApp }: {
     path: string;
     onDeleteApp: (path: string) => void;
 }) {
-    const { data } = useQuery<AppData>({
+    const { data, isLoading } = useQuery<AppData>({
         queryKey: ['appDetails', path],
         queryFn: async () => await window.ipc.getAppDetails(path),
         refetchOnWindowFocus: false,
         refetchInterval: 500,
     });
+
+    if (isLoading) {
+        return <Stack component={Card} p={1}>
+            <Stack direction='row' gap={2}>
+                <Skeleton variant='circular' width={40} height={40} />
+                <Skeleton width={150} height={40} />
+            </Stack>
+            <Skeleton height={40} />
+        </Stack>;
+    }
 
     if (!data) {
         return <Card><CardContent>Failed</CardContent></Card>;
