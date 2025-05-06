@@ -14,7 +14,7 @@ const handler = {
             ipcRenderer.removeListener(channel, subscription);
         };
     },
-    openFileDialog(): Promise<string> {
+    openFileDialog(): Promise<string[]> {
         return ipcRenderer.invoke('open-file-dialog');
     },
     getAppDetails(path: string): Promise<AppData> {

@@ -15,15 +15,15 @@ export default function Viewport() {
                 <Button startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
                 <Button startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
             </Stack>
-            <Stack direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'}>
+            <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'} justifyContent={'space-around'}>
                 {appPathList.map(path => <AppCard key={path} path={path} onDeleteApp={handleDeleteApp} />)}
             </Stack>
         </Stack>
     );
 
     async function handleFileSelect() {
-        const path = await window.ipc.openFileDialog();
-        setAppPathList(prev => [...prev, path]);
+        const paths = await window.ipc.openFileDialog();
+        setAppPathList(prev => [...prev, ...paths.filter(p => !prev.includes(p))]);
     };
 
     function handleDeleteApp(path: string) {

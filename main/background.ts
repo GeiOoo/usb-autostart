@@ -99,12 +99,12 @@ ipcMain.on('message', async (event, arg) => {
     event.reply('message', `${arg} World!`);
 });
 
-ipcMain.handle('open-file-dialog', async (): Promise<string> => {
+ipcMain.handle('open-file-dialog', async (): Promise<string[]> => {
     const result = await dialog.showOpenDialog({
-        properties: ['openFile'],
+        properties: ['openFile', 'multiSelections'],
     });
 
-    return result?.filePaths[0];
+    return result?.filePaths ?? [];
 });
 
 ipcMain.handle('get-app-details', async (event, path: string): Promise<AppData> => {

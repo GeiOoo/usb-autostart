@@ -7,7 +7,9 @@
     "main": "app/background.js",
     "scripts": {
         "dev": "nextron",
+        "install": "powershell -Command \"& '.\\dist\\USB AutoStart Setup 1.0.0.exe'\"",
         "build": "nextron build",
+        "build:install": "npm run build && npm run install",
         "postinstall": "electron-builder install-app-deps"
     },
     "dependencies": {
