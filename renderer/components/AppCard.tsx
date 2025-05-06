@@ -1,7 +1,7 @@
 'use client';
 
-import { Delete, Edit, Pause, PlayArrow } from '@mui/icons-material';
-import { Box, Button, Card, CardActions, CardHeader, IconButton, Skeleton, Typography } from '@mui/material';
+import { Delete, PlayArrow, Settings, Stop } from '@mui/icons-material';
+import { Button, Card, CardActions, CardHeader, IconButton, Skeleton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 
@@ -23,41 +23,36 @@ export default function AppCard({ path, onDeleteApp }: {
         refetchInterval: 500,
     });
 
-    const skeletonLengthInPixel = path.split('\\').pop()?.length * 8 || 0;
+    const nameSkeletonLengthInPixel = path.split('\\').pop()?.length * 8 || 0;
+    const pathSskeletonLengthInPixel = path.length * 7 || 0;
 
     return (
         <Card key={path} raised={data?.isRunning}>
             <CardHeader
-                action={!isLoading && <IconButton sx={{ ml: 1 }}><Edit /></IconButton>}
+                action={<IconButton size='small' color='error' onClick={handleDelete} ><Delete /></IconButton>}
                 avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={data.icon.toDataURL()} height={32} width={32} />}
-                title={isLoading ? <Skeleton width={skeletonLengthInPixel} height={32} /> : <Typography color={data.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>}
+                title={isLoading ? <Skeleton width={nameSkeletonLengthInPixel} height={28} /> : <Typography color={data.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>}
+                subheader={isLoading ? <Skeleton width={pathSskeletonLengthInPixel} height={20} /> : <Typography fontFamily={'monospace'} color='textSecondary' variant='caption'>{path}</Typography>}
             />
-            <CardActions>
-                <Button size='small' color='error' startIcon={<Delete />} onClick={handleDelete} >
-                    Delete
-                </Button>
-                <Box sx={{ flexGrow: 1 }} />
-                {data?.isRunning ?
-                    <Button
-                        size='small'
-                        color='primary'
-                        startIcon={<Pause />}
-                        onClick={() => window.ipc.stopApp(path)}
-                    >
-                        Stop
-                    </Button>
-                    :
-                    <Button
-                        size='small'
-                        color='primary'
-                        startIcon={<PlayArrow />}
-                        onClick={() => window.ipc.launchApp(path)}
-                    >
-                        Launch
-                    </Button>
-                }
+            <CardActions sx={{ pt: 0 }}>
+                <Button
+                    size='small'
+                    color='primary'
+                    variant='outlined'
+                    fullWidth
+                    {...data?.isRunning ? {
+                        children: 'Stop',
+                        startIcon: <Stop />,
+                        onClick: () => window.ipc.stopApp(path)
+                    } : {
+                        children: 'Start',
+                        startIcon: <PlayArrow />,
+                        onClick: () => window.ipc.launchApp(path)
+                    }}
+                />
+                <IconButton><Settings /></IconButton>
             </CardActions>
-        </Card>
+        </Card >
     );
 
     function handleDelete() {
