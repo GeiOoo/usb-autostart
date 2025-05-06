@@ -1,5 +1,5 @@
 import { execSync, spawn } from 'child_process';
-import { app, dialog, ipcMain } from 'electron';
+import { app, dialog, ipcMain, Menu, nativeImage, Tray } from 'electron';
 import serve from 'electron-serve';
 import path from 'path';
 import { AppData } from '../renderer/components/AppCard';
@@ -13,17 +13,54 @@ if (isProd) {
     app.setPath('userData', `${app.getPath('userData')} (development)`);
 }
 
+let tray: Tray | null = null;
+let mainWindow: ReturnType<typeof createWindow>;
 
 ; (async () => {
     await app.whenReady();
 
-    const mainWindow = createWindow('main', {
+    mainWindow = createWindow('main', {
         title: 'USB-AutoStart',
         width: 1400,
         height: 800,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
+    });
+
+    // Create tray icon
+    const icon = nativeImage.createFromPath(path.join(__dirname, '../resources/icon.ico'));
+    tray = new Tray(icon);
+
+    const contextMenu = Menu.buildFromTemplate([
+        {
+            label: 'Show Window',
+            click: () => mainWindow.show()
+        },
+        {
+            label: 'Quit',
+            click: () => {
+                mainWindow.destroy();
+                app.quit();
+            }
+        }
+    ]);
+
+    tray.setToolTip('USB-AutoStart');
+    tray.setContextMenu(contextMenu);
+
+    // Handle tray icon click
+    tray.on('click', () => {
+        mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    });
+
+    // Handle window close button
+    mainWindow.on('close', (event) => {
+        if (isProd) {
+            event.preventDefault();
+            mainWindow.hide();
+            return false;
+        }
     });
 
     // Set up USB device permission handler 
@@ -44,6 +81,7 @@ if (isProd) {
 })();
 
 app.on('window-all-closed', () => {
+    if (tray) tray.destroy();
     app.quit();
 });
 
