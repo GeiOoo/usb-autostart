@@ -29,8 +29,18 @@ let mainWindow: ReturnType<typeof createWindow>;
     });
 
     // Create tray icon
-    const icon = nativeImage.createFromPath(path.join(__dirname, '../resources/icon.ico'));
-    tray = new Tray(icon);
+    let iconPath;
+    if (isProd) {
+        // In production, the icon will be in the same directory as the executable
+        iconPath = path.join(process.resourcesPath, 'icon.ico');
+    } else {
+        iconPath = path.join(__dirname, '../resources/icon.ico');
+    }
+
+    if (!tray) {
+        const icon = nativeImage.createFromPath(iconPath);
+        tray = new Tray(icon);
+    }
 
     const contextMenu = Menu.buildFromTemplate([
         {

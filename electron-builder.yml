@@ -9,4 +9,9 @@ files:
     filter:
       - package.json
       - app
+extraResources:
+  - from: resources/
+    to: ./
+    filter:
+      - "icon.ico"
 publish: null
