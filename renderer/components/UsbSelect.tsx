@@ -1,6 +1,6 @@
 import { Autocomplete, Stack, TextField } from '@mui/material';
 import { USBDevice as ElectronUSBDevice } from 'electron/renderer';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useLocalStorageState from '../hooks/useLocalStorageState';
 
 const nav = navigator as any;
@@ -18,48 +18,51 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
     onSelectedUsbDisconnected: () => void;
 }) {
     const [selectedUsbDevice, setSelectedUsbDevice] = useLocalStorageState<USBDevice>(null, 'selectedUsbDevice');
-    const [isSelectedDeviceConnected, setIsSelectedDeviceConnected] = useState(false);
+    // const [isSelectedDeviceConnected, setIsSelectedDeviceConnected] = useState(false);
 
-    const [deviceList, setDeviceList] = useState<USBDevice[]>(selectedUsbDevice ? [selectedUsbDevice] : []);
+    const [deviceList, setDeviceList] = useState<USBDevice[]>([]);
     const [recordUsbConnect, setRecordUsbConnect] = useState(false);
 
+    const isSelectedDeviceConnected = useMemo(() => {
+        return selectedUsbDevice && deviceList.some(device => isSameDevice(device, selectedUsbDevice));
+    }, [selectedUsbDevice, deviceList]);
+
     useEffect(() => {
+        nav.usb.getDevices().then(devices => {
+            const mappedDevices = devices.map(device => mapUsbDevice(device));
+            setDeviceList(mappedDevices);
+        });
+
         const signal = new AbortController();
 
         nav.usb.addEventListener("connect", event => {
             const newDevice = mapUsbDevice(event.device);
 
             if (isSameDevice(selectedUsbDevice, newDevice)) {
-                setIsSelectedDeviceConnected(true);
                 onSelectedUsbConnected();
+            }
+
+            if (deviceList.some(device => isSameDevice(device, newDevice))) {
                 return;
             }
 
-            if (recordUsbConnect) {
-                if (deviceList.some(device => isSameDevice(device, newDevice))) {
-                    return;
-                }
-
-                setDeviceList(prev => [...prev, newDevice]);
-            }
+            setDeviceList(prev => [...prev, newDevice]);
         }, { signal: signal.signal });
 
         nav.usb.addEventListener("disconnect", event => {
             const disconnectedDevice = mapUsbDevice(event.device);
 
             if (isSameDevice(selectedUsbDevice, disconnectedDevice)) {
-                setIsSelectedDeviceConnected(false);
                 onSelectedUsbDisconnected();
-                return;
             }
 
-            setDeviceList(prev => prev.filter(device => isSameDevice(device, disconnectedDevice)));
+            setDeviceList(prev => prev.filter(device => !isSameDevice(device, disconnectedDevice)));
         }, { signal: signal.signal });
 
         return () => {
             signal.abort();
         };
-    }, [recordUsbConnect]);
+    }, []);
 
     return (
         <Stack flex={1} direction={'row'} justifyContent={'center'} px={8}>
@@ -70,7 +73,6 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
                 value={selectedUsbDevice}
                 onChange={(_event, newValue) => {
                     setSelectedUsbDevice(newValue);
-                    setIsSelectedDeviceConnected(true);
                 }}
                 onOpen={() => setRecordUsbConnect(true)}
                 onClose={() => setRecordUsbConnect(false)}
@@ -92,7 +94,7 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
 function mapUsbDevice(device: ElectronUSBDevice): USBDevice {
     return {
         productId: device.productId,
-        productName: device.productName,
+        productName: device.productName ? device.productName : `Unknown Device (${device.productId}:${device.vendorId})`,
         vendorId: device.vendorId,
         manufacturerName: device.manufacturerName,
         serialNumber: device.serialNumber
