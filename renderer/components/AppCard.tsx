@@ -24,7 +24,7 @@ export default function AppCard({ path, onDeleteApp }: {
     });
 
     const nameSkeletonLengthInPixel = path.split('\\').pop()?.length * 8 || 0;
-    const pathSskeletonLengthInPixel = path.length * 7 || 0;
+    const pathSskeletonLengthInPixel = Math.min(path.length * 7, 240);
 
     return (
         <Stack component={Card} key={path} raised={data?.isRunning}>
