@@ -1,6 +1,7 @@
 import { app, dialog, ipcMain } from 'electron';
 import serve from 'electron-serve';
 import path from 'path';
+import { AppData } from '../renderer/components/AppCard';
 import { createWindow } from './helpers';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -39,10 +40,20 @@ ipcMain.on('message', async (event, arg) => {
     event.reply('message', `${arg} World!`);
 });
 
-ipcMain.handle('open-file-dialog', async () => {
+ipcMain.handle('open-file-dialog', async (): Promise<string> => {
     const result = await dialog.showOpenDialog({
         properties: ['openFile'],
     });
-    return await app.getFileIcon(result.filePaths[0]);
-    return result.filePaths;
+
+    return result?.filePaths[0];
+});
+
+ipcMain.handle('get-app-details', async (event, path: string): Promise<AppData> => {
+    console.log({ path });
+
+    return {
+        name: path.split('\\').pop() || 'Unknown',
+        path,
+        icon: await app.getFileIcon(path, { size: 'large' }),
+    };
 });

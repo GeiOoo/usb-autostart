@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { AppData } from '../renderer/components/AppCard';
 
 const handler = {
     send(channel: string, value: unknown) {
@@ -13,9 +14,12 @@ const handler = {
             ipcRenderer.removeListener(channel, subscription);
         };
     },
-    openFileDialog(): Promise<Electron.NativeImage> {
+    openFileDialog(): Promise<string> {
         return ipcRenderer.invoke('open-file-dialog');
-    }
+    },
+    getAppDetails(path: string): Promise<AppData> {
+        return ipcRenderer.invoke('get-app-details', path);
+    },
 };
 
 contextBridge.exposeInMainWorld('ipc', handler);
