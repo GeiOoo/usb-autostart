@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import { app, dialog, ipcMain } from 'electron';
 import serve from 'electron-serve';
 import path from 'path';
@@ -49,11 +50,21 @@ ipcMain.handle('open-file-dialog', async (): Promise<string> => {
 });
 
 ipcMain.handle('get-app-details', async (event, path: string): Promise<AppData> => {
-    console.log({ path });
+    const fileName = path.split('\\').pop() || 'Unknown';
+    const processName = fileName.replace(/\.[^/.]+$/, "");
+
+    let isRunning = false;
+    try {
+        const stdout = execSync(`powershell Get-Process "${processName}" -ErrorAction SilentlyContinue`);
+        isRunning = stdout.length > 0;
+    } catch {
+        isRunning = false;
+    }
 
     return {
         name: path.split('\\').pop() || 'Unknown',
         path,
         icon: await app.getFileIcon(path, { size: 'large' }),
+        isRunning
     };
 });
