@@ -74,12 +74,12 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
                 }}
                 onOpen={() => setRecordUsbConnect(true)}
                 onClose={() => setRecordUsbConnect(false)}
-                getOptionLabel={option => `${option.manufacturerName} - ${option.productName} (${option.vendorId}:${option.productId})`}
+                getOptionLabel={option => option.productName}
                 renderInput={params =>
                     <TextField
                         {...params}
                         color={isSelectedDeviceConnected ? 'success' : 'warning'}
-                        focused
+                        focused={!!selectedUsbDevice}
                         label={'Selected USB-Device'}
                         fullWidth
                     />

@@ -18,6 +18,7 @@ if (isProd) {
     await app.whenReady();
 
     const mainWindow = createWindow('main', {
+        title: 'USB-AutoStart',
         width: 1400,
         height: 800,
         webPreferences: {
