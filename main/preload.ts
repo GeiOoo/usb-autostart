@@ -20,6 +20,12 @@ const handler = {
     getAppDetails(path: string): Promise<AppData> {
         return ipcRenderer.invoke('get-app-details', path);
     },
+    launchApp(path: string): Promise<void> {
+        return ipcRenderer.invoke('launch-app', path);
+    },
+    stopApp(path: string): Promise<void> {
+        return ipcRenderer.invoke('stop-app', path);
+    },
 };
 
 contextBridge.exposeInMainWorld('ipc', handler);

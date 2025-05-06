@@ -43,11 +43,21 @@ export default function AppCard({ path, onDeleteApp }: {
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
                 {data.isRunning ?
-                    <Button size='small' color='primary' startIcon={<Pause />} >
+                    <Button
+                        size='small'
+                        color='primary'
+                        startIcon={<Pause />}
+                        onClick={() => window.ipc.stopApp(path)}
+                    >
                         Stop
                     </Button>
                     :
-                    <Button size='small' color='primary' startIcon={<PlayArrow />}>
+                    <Button
+                        size='small'
+                        color='primary'
+                        startIcon={<PlayArrow />}
+                        onClick={() => window.ipc.launchApp(path)}
+                    >
                         Launch
                     </Button>
                 }

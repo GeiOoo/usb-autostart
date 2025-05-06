@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { app, dialog, ipcMain } from 'electron';
 import serve from 'electron-serve';
 import path from 'path';
@@ -67,4 +67,35 @@ ipcMain.handle('get-app-details', async (event, path: string): Promise<AppData> 
         icon: await app.getFileIcon(path, { size: 'large' }),
         isRunning
     };
+});
+
+ipcMain.handle('launch-app', async (_event, path: string) => {
+    const fileName = path.split('\\').pop() || '';
+    const processName = fileName.replace(/\.[^/.]+$/, "");
+
+    // Check if already running
+    try {
+        const stdout = execSync(`powershell Get-Process "${processName}" -ErrorAction SilentlyContinue`);
+        if (stdout.length > 0) {
+            return; // Process already running
+        }
+    } catch {
+        // Process not running, continue with launch
+    }
+
+    spawn(path, [], {
+        detached: true,
+        stdio: 'ignore'
+    }).unref(); // Unref to allow the child to run independently
+});
+
+ipcMain.handle('stop-app', async (_event, path: string) => {
+    const fileName = path.split('\\').pop() || '';
+    const processName = fileName.replace(/\.[^/.]+$/, "");
+
+    try {
+        execSync(`powershell Stop-Process -Name "${processName}" -ErrorAction SilentlyContinue`);
+    } catch {
+        // Process might already be stopped
+    }
 });
