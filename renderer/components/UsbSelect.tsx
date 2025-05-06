@@ -18,10 +18,7 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
     onSelectedUsbDisconnected: () => void;
 }) {
     const [selectedUsbDevice, setSelectedUsbDevice] = useLocalStorageState<USBDevice>(null, 'selectedUsbDevice');
-    // const [isSelectedDeviceConnected, setIsSelectedDeviceConnected] = useState(false);
-
     const [deviceList, setDeviceList] = useState<USBDevice[]>([]);
-    const [recordUsbConnect, setRecordUsbConnect] = useState(false);
 
     const isSelectedDeviceConnected = useMemo(() => {
         return selectedUsbDevice && deviceList.some(device => isSameDevice(device, selectedUsbDevice));
@@ -40,10 +37,6 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
 
             if (isSameDevice(selectedUsbDevice, newDevice)) {
                 onSelectedUsbConnected();
-            }
-
-            if (deviceList.some(device => isSameDevice(device, newDevice))) {
-                return;
             }
 
             setDeviceList(prev => [...prev, newDevice]);
@@ -67,15 +60,10 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
     return (
         <Stack flex={1} direction={'row'} justifyContent={'center'} px={8}>
             <Autocomplete
-                open={recordUsbConnect}
                 fullWidth
                 options={deviceList}
                 value={selectedUsbDevice}
-                onChange={(_event, newValue) => {
-                    setSelectedUsbDevice(newValue);
-                }}
-                onOpen={() => setRecordUsbConnect(true)}
-                onClose={() => setRecordUsbConnect(false)}
+                onChange={(_event, newValue) => setSelectedUsbDevice(newValue)}
                 getOptionLabel={option => option.productName}
                 renderInput={params =>
                     <TextField
