@@ -130,7 +130,8 @@ ipcMain.handle('get-app-details', async (event, path: string): Promise<AppData> 
     let isRunning = false;
     try {
         isRunning = await new Promise((resolve) => {
-            exec(`powershell Get-Process "${processName}" -ErrorAction SilentlyContinue`, (error, stdout) => {
+            // Use proper PowerShell command syntax
+            exec(`powershell -Command "Get-Process -Name \\"${processName}\\" -ErrorAction SilentlyContinue"`, (error, stdout) => {
                 resolve(stdout.length > 0);
             });
         });
@@ -153,7 +154,8 @@ ipcMain.handle('launch-app', async (_event, path: string) => {
     // Check if already running
     try {
         const isRunning = await new Promise<boolean>((resolve) => {
-            exec(`powershell Get-Process "${processName}" -ErrorAction SilentlyContinue`, (error, stdout) => {
+            // Use proper PowerShell command syntax
+            exec(`powershell -Command "Get-Process -Name \\"${processName}\\" -ErrorAction SilentlyContinue"`, (error, stdout) => {
                 resolve(stdout.length > 0);
             });
         });
@@ -176,7 +178,8 @@ ipcMain.handle('stop-app', async (_event, path: string) => {
     const processName = fileName.replace(/\.[^/.]+$/, "");
 
     return new Promise((resolve) => {
-        exec(`powershell Stop-Process -Name "${processName}" -ErrorAction SilentlyContinue`, (error) => {
+        // Use proper PowerShell command syntax
+        exec(`powershell -Command "Stop-Process -Name \\"${processName}\\" -ErrorAction SilentlyContinue"`, (error) => {
             resolve(null);
         });
     });
