@@ -8,14 +8,14 @@ export default function Viewport() {
     const [appPathList, setAppPathList] = useLocalStorageState<string[]>([], 'appPathList');
 
     return (
-        <Stack spacing={2} padding={2}>
-            <Stack direction="row" spacing={2}>
+        <Stack gap={2} padding={2}>
+            <Stack direction="row" gap={2}>
                 <Button startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
                 <UsbSelect onSelectedUsbConnected={handleStartAll} onSelectedUsbDisconnected={handleStopAll} />
                 <Button startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
                 <Button startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
             </Stack>
-            <Stack direction={'row'} spacing={2}>
+            <Stack direction={'row'} gap={2} flexWrap="wrap">
                 {appPathList.map(path => <AppCard key={path} path={path} onDeleteApp={handleDeleteApp} />)}
             </Stack>
         </Stack>
