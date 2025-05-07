@@ -10,10 +10,10 @@ export default function Viewport() {
     return (
         <Stack gap={2} padding={2} height={'100vh'}>
             <Stack direction="row" gap={2}>
-                <Button startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
+                <Button size='small' startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
                 <UsbSelect onSelectedUsbConnected={handleStartAll} onSelectedUsbDisconnected={handleStopAll} />
-                <Button startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
-                <Button startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
+                <Button size='small' startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
+                <Button size='small' startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
             </Stack>
             <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'}>
                 {appDataList.map(data => (

@@ -60,6 +60,7 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
     return (
         <Stack flex={1} direction={'row'} justifyContent={'center'} px={8}>
             <Autocomplete
+                size='small'
                 fullWidth
                 options={deviceList}
                 value={selectedUsbDevice}
