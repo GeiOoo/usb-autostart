@@ -1,6 +1,6 @@
 import { UploadFile } from '@mui/icons-material';
 import { Button, DialogActions, DialogContent, DialogTitle, IconButton, Stack, TextField } from '@mui/material';
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { AppMetaData } from './AppCard';
 
 export default function AppCardSettings({ data, closeDialog, updateAppMetaData }: {
@@ -12,7 +12,7 @@ export default function AppCardSettings({ data, closeDialog, updateAppMetaData }
     const [path, setPath] = useState(data.path);
 
     return (
-        <>
+        <form onSubmit={handleSave}>
             <DialogTitle>App Settings - {data.name}</DialogTitle>
             <Stack component={DialogContent} gap={1}>
                 <TextField
@@ -35,9 +35,9 @@ export default function AppCardSettings({ data, closeDialog, updateAppMetaData }
             </Stack>
             <DialogActions>
                 <Button onClick={closeDialog} >Cancel</Button>
-                <Button onClick={handleSave} >Save</Button>
+                <Button type='submit' >Save</Button>
             </DialogActions>
-        </>
+        </form>
     );
 
     async function handleSelectFile() {
@@ -50,7 +50,8 @@ export default function AppCardSettings({ data, closeDialog, updateAppMetaData }
         }
     }
 
-    function handleSave() {
+    function handleSave(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
         updateAppMetaData(data.path, { name, path });
         closeDialog();
     }
