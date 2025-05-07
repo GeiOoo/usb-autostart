@@ -28,7 +28,7 @@ export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData }: {
         queryKey: ['appDetails', path],
         queryFn: async () => await window.ipc.getAppDetails(path),
         refetchOnWindowFocus: false,
-        refetchInterval: 500,
+        refetchInterval: 1000,
         select: data => {
             return {
                 ...data,
