@@ -70,8 +70,11 @@ let mainWindow: ReturnType<typeof createWindow>;
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
-        show: !process.argv.includes('--minimized'), // Don't show window if --minimized argument is present
     });
+
+    if (process.argv.includes('--minimized')) {
+        mainWindow.hide();
+    }
 
     // Create tray icon
     let iconPath;
