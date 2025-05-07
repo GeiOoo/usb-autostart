@@ -69,8 +69,6 @@ export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData }: {
             />
             <CardActions sx={{ pt: 0 }}>
                 <Button
-                    size='small'
-                    color='primary'
                     variant='outlined'
                     fullWidth
                     {...processData?.isRunning ? {

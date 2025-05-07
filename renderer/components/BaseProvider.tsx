@@ -8,6 +8,23 @@ const theme = createTheme({
     palette: {
         mode: 'dark',
     },
+    components: {
+        MuiSelect: {
+            defaultProps: {
+                size: 'small'
+            }
+        },
+        MuiButton: {
+            defaultProps: {
+                size: 'small',
+            }
+        },
+        MuiIconButton: {
+            defaultProps: {
+                size: 'small',
+            }
+        }
+    }
 });
 
 const queryClient = new QueryClient();
