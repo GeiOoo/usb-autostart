@@ -40,30 +40,17 @@ export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData }: {
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
 
     const nameSkeletonLengthInPixel = path.split('\\').pop()?.length * 8 || 0;
-    const pathSskeletonLengthInPixel = Math.min(path.length * 7, 240);
 
     return (
-        <Stack component={Card} key={path} raised={processData?.isRunning}>
+        <Stack component={Card} key={path} raised={processData?.isRunning} flex={1} minWidth={250} maxWidth={400}>
             <CardHeader
                 action={<IconButton size='small' color='error' onClick={handleDelete} ><Delete /></IconButton>}
                 avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={processData.icon} height={32} width={32} />}
-                title={isLoading ? <Skeleton width={nameSkeletonLengthInPixel} height={28} /> : <Typography color={processData.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>}
-                subheader={isLoading ?
-                    <Skeleton width={pathSskeletonLengthInPixel} height={20} />
+                title={isLoading ?
+                    <Skeleton width={nameSkeletonLengthInPixel} height={28} />
                     :
                     <Tooltip title={path} placement='top' arrow>
-                        <Typography
-                            display={'block'}
-                            width={250}
-                            textOverflow={'ellipsis'}
-                            overflow={'hidden'}
-                            whiteSpace={'nowrap'}
-                            fontFamily={'monospace'}
-                            color='textSecondary'
-                            variant='caption'
-                        >
-                            {path}
-                        </Typography>
+                        <Typography color={processData.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>
                     </Tooltip>
                 }
             />
