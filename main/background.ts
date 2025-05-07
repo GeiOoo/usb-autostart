@@ -12,7 +12,7 @@ const APP_NAME = 'USB AutoStart';
 async function setAutoStart(enable: boolean): Promise<void> {
     const appPath = app.getPath('exe');
     const command = enable ?
-        `REG ADD "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /t REG_SZ /F /D "${appPath}"` :
+        `REG ADD "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /t REG_SZ /F /D "\\"${appPath}\\" --minimized"` :
         `REG DELETE "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /F`;
 
     return new Promise((resolve, reject) => {
@@ -70,6 +70,7 @@ let mainWindow: ReturnType<typeof createWindow>;
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
+        show: !process.argv.includes('--minimized'), // Don't show window if --minimized argument is present
     });
 
     // Create tray icon
