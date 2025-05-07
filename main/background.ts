@@ -2,7 +2,7 @@ import { exec, spawn } from 'child_process';
 import { app, dialog, ipcMain, Menu, nativeImage, Tray } from 'electron';
 import serve from 'electron-serve';
 import path from 'path';
-import { AppLiveData } from '../renderer/components/AppCard';
+import { AppLiveData } from '../renderer/components/AppCard/AppCard';
 import { createWindow } from './helpers';
 
 const isProd = process.env.NODE_ENV === 'production';

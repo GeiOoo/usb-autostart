@@ -1,9 +1,11 @@
 'use client';
 
 import { Delete, PlayArrow, Settings, Stop } from '@mui/icons-material';
-import { Button, Card, CardActions, CardHeader, IconButton, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
+import { Button, Card, CardActions, CardHeader, Dialog, IconButton, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
+import { useState } from 'react';
+import AppCardSettings from './AppCardSettings';
 
 export type AppMetaData = {
     name: string;
@@ -15,9 +17,10 @@ export type AppLiveData = {
     isRunning: boolean;
 };
 
-export default function AppCard({ data, onDeleteApp }: {
+export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData }: {
     data: AppMetaData;
     onDeleteApp: (path: string) => void;
+    onUpdateAppMetaData: (oldPath: string, newData: AppMetaData) => void;
 }) {
     const { path } = data;
 
@@ -33,6 +36,8 @@ export default function AppCard({ data, onDeleteApp }: {
             };
         }
     });
+
+    const [showSettingsDialog, setShowSettingsDialog] = useState(false);
 
     const nameSkeletonLengthInPixel = path.split('\\').pop()?.length * 8 || 0;
     const pathSskeletonLengthInPixel = Math.min(path.length * 7, 240);
@@ -78,7 +83,14 @@ export default function AppCard({ data, onDeleteApp }: {
                         onClick: () => window.ipc.launchApp(path)
                     }}
                 />
-                <IconButton><Settings /></IconButton>
+                <IconButton onClick={() => setShowSettingsDialog(true)}><Settings /></IconButton>
+                <Dialog open={showSettingsDialog} onClose={() => setShowSettingsDialog(false)} fullWidth>
+                    <AppCardSettings
+                        data={data}
+                        closeDialog={() => setShowSettingsDialog(false)}
+                        updateAppMetaData={onUpdateAppMetaData}
+                    />
+                </Dialog>
             </CardActions>
         </Stack >
     );

@@ -1,7 +1,7 @@
 import { Add, PlayArrow, Stop } from '@mui/icons-material';
 import { Button, Stack } from '@mui/material';
 import useLocalStorageState from '../hooks/useLocalStorageState';
-import AppCard, { AppMetaData } from './AppCard';
+import AppCard, { AppMetaData } from './AppCard/AppCard';
 import UsbSelect from './UsbSelect';
 
 export default function Viewport() {
@@ -16,7 +16,16 @@ export default function Viewport() {
                 <Button startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
             </Stack>
             <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'}>
-                {appDataList.map(data => <AppCard key={data.path} data={data} onDeleteApp={handleDeleteApp} />)}
+                {appDataList.map(data => (
+                    <AppCard
+                        key={data.path}
+                        data={data}
+                        onDeleteApp={handleDeleteApp}
+                        onUpdateAppMetaData={(oldPath, newData) => {
+                            setAppDataList(prev => prev.map(app => app.path === oldPath ? newData : app));
+                        }}
+                    />
+                ))}
             </Stack>
         </Stack>
     );
