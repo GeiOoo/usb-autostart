@@ -6,7 +6,7 @@ import AppCard, { AppMetaData } from './AppCard/AppCard';
 import AppCardIcon from './AppCard/AppCardIcon';
 import UsbSelect from './UsbSelect';
 
-export default function Viewport() {
+export default function AppGroup() {
     const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
     const [expanded, setExpanded] = useState(false);
 
