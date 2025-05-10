@@ -1,5 +1,6 @@
 import { Add, ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material';
 import { Button, Collapse, IconButton, Paper, Stack } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import useLocalStorageState from '../hooks/useLocalStorageState';
 import AppCard, { AppMetaData } from './AppCard/AppCard';
@@ -7,8 +8,33 @@ import AppCardIcon from './AppCard/AppCardIcon';
 import UsbSelect from './UsbSelect';
 
 export default function AppGroup() {
-    const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
     const [expanded, setExpanded] = useState(false);
+    const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
+
+    const { data: appList, isLoading } = useQuery({
+        initialData: [],
+        queryKey: ['appDetails'],
+        queryFn: async () => {
+            return await Promise.all(appDataList.map(async data => ({
+                data,
+                process: await window.ipc.getAppDetails(data.path)
+            })));
+        },
+        refetchOnWindowFocus: false,
+        refetchInterval: 1000,
+        select: data => {
+            return data.map(app => ({
+                ...app,
+                data: {
+                    ...app.data
+                },
+                process: {
+                    ...app.process,
+                }
+            }));
+        }
+    });
+
 
     return (
         <Stack height={'100vh'} >
@@ -24,8 +50,8 @@ export default function AppGroup() {
                 </Stack>
                 <Collapse in={!expanded}>
                     <Stack direction={'row'} gap={1} flexWrap="wrap">
-                        {appDataList.map(data => (
-                            <AppCardIcon path={data.path} key={data.path} />
+                        {appList.map(app => (
+                            <AppCardIcon isLoading={isLoading} processData={app.process as any} key={app.data.name} />
                         ))}
                     </Stack>
                 </Collapse>
@@ -33,12 +59,14 @@ export default function AppGroup() {
             <Stack p={2}>
                 <Collapse in={expanded} >
                     <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'}>
-                        {appDataList
-                            .toSorted((a, b) => a.name.localeCompare(b.name))
-                            .map(data => (
+                        {appList
+                            .toSorted((a, b) => a.data.name.localeCompare(b.data.name))
+                            .map(app => (
                                 <AppCard
-                                    key={data.path}
-                                    data={data}
+                                    key={app.data.path}
+                                    data={app.data}
+                                    isLoading={isLoading}
+                                    processData={app.process}
                                     onDeleteApp={handleDeleteApp}
                                     onUpdateAppMetaData={(oldPath, newData) => {
                                         setAppDataList(prev => prev.map(app => app.path === oldPath ? newData : app));

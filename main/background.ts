@@ -193,7 +193,7 @@ ipcMain.handle('get-app-details', async (event, path: string): Promise<AppLiveDa
     }
 
     return {
-        icon: await app.getFileIcon(path, { size: 'large' }),
+        icon: (await app.getFileIcon(path, { size: 'large' })),
         isRunning
     };
 });
