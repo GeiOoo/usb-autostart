@@ -18,7 +18,7 @@ export default function AppCardIcon({ path }: { path: string; }) {
     });
 
     return (
-        <Stack component={Card} p={1} variant='outlined' borderColor={processData.isRunning ? `${theme.palette.success.main}99` : undefined} >
+        <Stack component={Card} p={1} variant='outlined' borderColor={processData?.isRunning ? `${theme.palette.success.main}99` : undefined} >
             {isLoading ? <Skeleton variant='circular' width={16} height={16} /> : <Image alt='icon' src={processData.icon} height={16} width={16} />}
         </Stack>
     );

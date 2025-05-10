@@ -1,12 +1,12 @@
 import { NoSsr } from '@mui/material';
 import BaseProvider from '../components/BaseProvider';
-import Viewport from '../components/Viewport';
+import AppGroup from '../components/Viewport';
 
 export default function HomePage() {
     return (
         <BaseProvider>
             <NoSsr>
-                <Viewport />
+                <AppGroup />
             </NoSsr>
         </BaseProvider>
     );
