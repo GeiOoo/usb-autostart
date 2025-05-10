@@ -86,9 +86,6 @@ let mainWindow: ReturnType<typeof createWindow>;
         tray = new Tray(icon);
     }
 
-    // Get initial autostart state
-    const autoStartEnabled = await isAutoStartEnabled();
-
     const updateContextMenu = async () => {
         const autoStartEnabled = await isAutoStartEnabled();
         const contextMenu = Menu.buildFromTemplate([
