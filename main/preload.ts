@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { AppLiveData } from '../renderer/components/AppCard/AppCard';
+import { AppLiveData } from '../renderer/components/AppGroup/AppCard/AppCard';
 
 const handler = {
     send(channel: string, value: unknown) {

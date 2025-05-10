@@ -2,17 +2,23 @@ import { Add, ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-mat
 import { Button, Collapse, IconButton, Paper, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import useLocalStorageState from '../hooks/useLocalStorageState';
+import useLocalStorageState from '../../hooks/useLocalStorageState';
+import UsbSelect from '../UsbSelect';
 import AppCard, { AppMetaData } from './AppCard/AppCard';
 import AppCardIcon from './AppCard/AppCardIcon';
-import UsbSelect from './UsbSelect';
 
 export default function AppGroup() {
     const [expanded, setExpanded] = useState(false);
     const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
 
-    const { data: appList, isLoading } = useQuery({
-        initialData: [],
+    const { data: appList, isPlaceholderData } = useQuery({
+        placeholderData: appDataList.map(data => ({
+            data,
+            process: {
+                icon: null,
+                isRunning: false
+            }
+        })),
         queryKey: ['appDetails'],
         queryFn: async () => {
             return await Promise.all(appDataList.map(async data => ({
@@ -22,17 +28,6 @@ export default function AppGroup() {
         },
         refetchOnWindowFocus: false,
         refetchInterval: 1000,
-        select: data => {
-            return data.map(app => ({
-                ...app,
-                data: {
-                    ...app.data
-                },
-                process: {
-                    ...app.process,
-                }
-            }));
-        }
     });
 
 
@@ -51,7 +46,7 @@ export default function AppGroup() {
                 <Collapse in={!expanded}>
                     <Stack direction={'row'} gap={1} flexWrap="wrap">
                         {appList.map(app => (
-                            <AppCardIcon isLoading={isLoading} processData={app.process as any} key={app.data.name} />
+                            <AppCardIcon isLoading={isPlaceholderData} processData={app.process as any} key={app.data.name} />
                         ))}
                     </Stack>
                 </Collapse>
@@ -65,7 +60,7 @@ export default function AppGroup() {
                                 <AppCard
                                     key={app.data.path}
                                     data={app.data}
-                                    isLoading={isLoading}
+                                    isLoading={isPlaceholderData}
                                     processData={app.process}
                                     onDeleteApp={handleDeleteApp}
                                     onUpdateAppMetaData={(oldPath, newData) => {
