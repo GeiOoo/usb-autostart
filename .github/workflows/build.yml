@@ -44,3 +44,29 @@ jobs:
           name: windows-portable
           path: dist/USB-AutoStart Portable.zip
           if-no-files-found: error
+
+      - name: Find Comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '### Build Artifacts'
+
+      - name: Create or Update Comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Build Artifacts
+            ✅ Build completed successfully!
+            
+            Download the artifacts:
+            - [Windows Installer](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})/artifacts
+            - [Portable Version](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})/artifacts
+            
+            These links will take you to the workflow run where you can download the artifacts.
+          edit-mode: replace
