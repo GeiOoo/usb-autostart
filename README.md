@@ -1,38 +1,59 @@
-<p align="center"><img src="https://i.imgur.com/NZfsD1p.png"></p>
+# USB AutoStart
 
-## Usage
+A desktop application built with Electron and Next.js that allows you to manage and automatically start applications when a specific USB device is connected to your computer.
 
-### Create an App
+Based on the NextTron Repo: https://github.com/saltyshiomix/nextron
 
+## Features
+
+- 🚀 Launch applications automatically when a specific USB device is connected
+- 🎮 Manual control over starting and stopping applications
+- ⚡ Quick access through system tray
+- 🔄 Auto-start with Windows option
+
+## Development
+
+Prerequisites:
+- Node.js 20 or later
+- npm
+
+To start the development environment:
+
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
 ```
-# with npx
-$ npx create-nextron-app my-app --example basic-lang-typescript
 
-# with yarn
-$ yarn create nextron-app my-app --example basic-lang-typescript
+## Building
 
-# with pnpm
-$ pnpm dlx create-nextron-app my-app --example basic-lang-typescript
+To create a production build:
+
+```bash
+# Create production build
+npm run build
+
+# Build and install locally
+npm run build:install
 ```
 
-### Install Dependencies
+The built application will be available in the `dist` folder with both installer and portable versions.
 
-```
-$ cd my-app
+## GitHub Actions
 
-# using yarn or npm
-$ yarn (or `npm install`)
+The project includes automated builds through GitHub Actions, which creates:
+- Windows installer (.exe)
+- Portable version (ZIP)
 
-# using pnpm
-$ pnpm install --shamefully-hoist
-```
+## Tech Stack
 
-### Use it
-
-```
-# development mode
-$ yarn dev (or `npm run dev` or `pnpm run dev`)
-
-# production build
-$ yarn build (or `npm run build` or `pnpm run build`)
-```
+- Electron
+- Next.js
+- React
+- TypeScript
+- Material-UI (MUI)
+- React Query
+- Electron Store for persistence
+- Electron Builder for packaging

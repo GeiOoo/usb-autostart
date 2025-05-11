@@ -1,0 +1,44 @@
+name: Build Application
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Create portable ZIP
+        run: Compress-Archive -Path "dist/win-unpacked" -DestinationPath "dist/USB-AutoStart Portable.zip"
+        shell: pwsh
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/*.exe
+          if-no-files-found: error
+
+      - name: Upload Portable version
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: dist/USB-AutoStart Portable.zip
+          if-no-files-found: error
