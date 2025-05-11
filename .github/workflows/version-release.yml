@@ -4,127 +4,72 @@ on:
   push:
     branches: [ main ]
 
-# Cancel any in-progress job or run
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  check-version-change:
+  check-version:
     runs-on: windows-latest
     # Get the PR number that was merged into this push
     outputs:
-      version_changed: ${{ steps.check-version.outputs.changed }}
-      current_version: ${{ steps.current-version.outputs.current-version }}
-      build_info: ${{ steps.get-build-info.outputs.build_info }}
+      version_changed: ${{ steps.check.outputs.version_changed }}
+      current_version: ${{ steps.check.outputs.current_version }}
       pr_number: ${{ steps.find-pr.outputs.pr_number }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Find merged PR
-        id: find-pr
-        run: |
-          # Get the PR number that was merged into this push
-          $pr = gh api "/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].number'
-          if (-not $pr) {
-            echo "::error::No merged PR found for this push"
-            exit 1
-          }
-          echo "pr_number=$pr" >> $env:GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-
-      - name: Get current version
-        id: current-version
-        run: |
-          $version = node -p "require('./package.json').version"
-          echo "current-version=$version" >> $env:GITHUB_OUTPUT
-        shell: pwsh
-
-      - name: Get previous version
-        id: check-version
-        run: |
-          git checkout HEAD~1
-          $previousVersion = node -p "require('./package.json').version"
-          git checkout -
-          $currentVersion = "${{ steps.current-version.outputs.current-version }}"
-          $changed = $previousVersion -ne $currentVersion
-          echo "changed=$changed" >> $env:GITHUB_OUTPUT
-          echo "Previous version: $previousVersion"
-          echo "Current version: $currentVersion"
-          echo "Changed: $changed"
-        shell: pwsh
-
-      - name: Get Build Info
-        id: get-build-info
-        run: |
-          # Get the successful build workflow run for the merged PR
-          $buildRun = gh api "/repos/${{ github.repository }}/actions/runs?event=pull_request&head_sha=${{ github.event.before }}" --jq '.workflow_runs[] | select(.name=="Build Application" and .conclusion=="success") | {runId: .id, status: .conclusion, sha: .head_sha}' | Select-Object -First 1
-          
-          if (-not $buildRun) {
-            echo "::error::No successful build workflow found for merged PR"
-            exit 1
-          }
-          
-          echo "build_info=$buildRun" >> $env:GITHUB_OUTPUT
-          echo "Found build run ID: $($buildRun.runId) for commit $($buildRun.sha)"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-
-  create-release:
-    needs: check-version-change
-    if: needs.check-version-change.outputs.version_changed == 'True'
-    runs-on: windows-latest
+      
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Check if tag exists
-        id: check-tag
+      - name: Get previous version
+        id: prev-version
         run: |
-          $tag="v${{ needs.check-version-change.outputs.current_version }}"
-          $tagExists = git tag -l "$tag"
-          echo "tag_exists=$($tagExists -ne $null)" >> $env:GITHUB_OUTPUT
+          $prevVersion = git show HEAD^:package.json | ConvertFrom-Json | Select-Object -ExpandProperty version
+          echo "prev_version=$prevVersion" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
-      - name: Download build artifacts
-        if: steps.check-tag.outputs.tag_exists == 'false'
-        uses: dawidd6/action-download-artifact@v3
+      - name: Get current version
+        id: curr-version
+        run: |
+          $currVersion = Get-Content package.json | ConvertFrom-Json | Select-Object -ExpandProperty version
+          echo "curr_version=$currVersion" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Check version change
+        id: check
+        run: |
+          $prevVersion = "${{ steps.prev-version.outputs.prev_version }}"
+          $currVersion = "${{ steps.curr-version.outputs.curr_version }}"
+          $changed = $prevVersion -ne $currVersion
+          echo "version_changed=$changed" >> $env:GITHUB_OUTPUT
+          echo "current_version=$currVersion" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Find associated PR
+        id: find-pr
+        run: |
+          $pr = git log -1 --pretty=%B | Select-String -Pattern "^Merge pull request #(\d+)"
+          if ($pr) {
+            $prNumber = $pr.Matches.Groups[1].Value
+            echo "pr_number=$prNumber" >> $env:GITHUB_OUTPUT
+          }
+        shell: pwsh
+
+  create-release:
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'True'
+    runs-on: windows-latest
+    
+    steps:
+      - name: Download PR build artifacts
+        uses: actions/download-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: build.yml
-          workflow_conclusion: success
-          run_id: ${{ fromJson(needs.check-version-change.outputs.build_info).runId }}
-          name: build-${{ fromJson(needs.check-version-change.outputs.build_info).runId }}
-          path: artifacts
+          name: build-${{ github.event.before }}
+          path: dist
 
       - name: Create Release
-        if: steps.check-tag.outputs.tag_exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          name: v${{ needs.check-version.outputs.current_version }}
+          tag_name: v${{ needs.check-version.outputs.current_version }}
+          files: dist/*
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $version="v${{ needs.check-version-change.outputs.current_version }}"
-          git tag $version
-          git push origin $version
-          
-          # Move setup.exe and win-unpacked to release folder
-          $setupFile = Get-ChildItem -Path "artifacts" -Recurse -Filter "*Setup*.exe" | Select-Object -First 1
-          $portableDir = Get-ChildItem -Path "artifacts" -Recurse -Filter "win-unpacked" | Select-Object -First 1
-          
-          # Create release directory
-          New-Item -ItemType Directory -Path "release" -Force
-          
-          # Copy setup.exe with proper name
-          Copy-Item $setupFile.FullName -Destination "release/USB-AutoStart-Setup-${{ needs.check-version-change.outputs.current_version }}.exe"
-          
-          # Create and copy portable zip
-          Compress-Archive -Path "$($portableDir.FullName)\*" -DestinationPath "release/USB-AutoStart-Portable-${{ needs.check-version-change.outputs.current_version }}.zip"
-          
-          # Create release with the processed files
-          gh release create $version release/* --title "Release $version" --generate-notes --notes "Built from PR #${{ needs.check-version-change.outputs.pr_number }}"
-        shell: pwsh
