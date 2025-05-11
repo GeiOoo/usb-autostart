@@ -24,7 +24,10 @@ jobs:
 
       - name: Get current version
         id: current-version
-        uses: martinbeentjes/npm-get-version-action@v1.3.1
+        run: |
+          $version = node -p "require('./package.json').version"
+          echo "current-version=$version" >> $env:GITHUB_OUTPUT
+        shell: pwsh
 
       - name: Get previous version
         id: check-version
