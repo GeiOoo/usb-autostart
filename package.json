@@ -1,9 +1,10 @@
 {
     "private": true,
-    "name": "my-nextron-app",
-    "description": "My application description",
+    "name": "usb-autostart",
+    "description": "Automatically start USB devices when connected",
+    "license": "MIT",
     "version": "1.0.0",
-    "author": "Yoshihide Shiono <shiono.yoshihide@gmail.com>",
+    "author": "Sascha Geier <throw3n@gmail.com>",
     "main": "app/background.js",
     "scripts": {
         "dev": "nextron",
