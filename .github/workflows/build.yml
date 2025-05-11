@@ -66,14 +66,13 @@ jobs:
           comment-author: 'github-actions[bot]'
           body-includes: '### Build Artifacts'
 
-      - name: Create or Update Comment
+      - name: Create Comment
         if: github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v3
         with:
-          comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ### Build Artifacts
+            ### Build Artifacts (Run ID: ${{ github.run_id }})
             ✅ Build completed successfully!
             
             Download the artifacts:
@@ -84,4 +83,4 @@ jobs:
             Build Info:
             - Run ID: ${{ github.run_id }}
             - Commit: ${{ github.sha }}
-          edit-mode: replace
+            - Timestamp: ${{ github.event.pull_request.updated_at }}
