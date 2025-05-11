@@ -1,10 +1,14 @@
 name: Version Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: [ main ]
-    paths:
-      - 'package.json'
+
+# Cancel any in-progress job or run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 # Cancel any in-progress job or run
 concurrency:
@@ -13,6 +17,8 @@ concurrency:
 
 jobs:
   check-version-change:
+    # Only run if the PR was merged
+    if: github.event.pull_request.merged == true
     runs-on: windows-latest
     outputs:
       version_changed: ${{ steps.check-version.outputs.changed }}
