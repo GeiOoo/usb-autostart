@@ -1,0 +1,56 @@
+name: Create Release
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/pr-build.yml
+    secrets: inherit
+
+  create-release:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get previous version
+        id: prev-version
+        shell: pwsh
+        run: |
+          $PREV_VERSION = git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version"
+          Write-Output "Previous version: $PREV_VERSION"
+          "version=$PREV_VERSION" >> $env:GITHUB_OUTPUT
+
+      - name: Get current version
+        id: current-version
+        shell: pwsh
+        run: |
+          $CURRENT_VERSION = node -p "require('./package.json').version"
+          Write-Output "Current version: $CURRENT_VERSION"
+          "version=$CURRENT_VERSION" >> $env:GITHUB_OUTPUT
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ github.run_id }}
+          path: dist/
+
+      - name: Create Release
+        if: steps.prev-version.outputs.version != steps.current-version.outputs.version
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.current-version.outputs.version }}
+          name: Release v${{ steps.current-version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: dist/*
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}

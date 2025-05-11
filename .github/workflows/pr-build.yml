@@ -3,6 +3,7 @@ name: PR-Build
 on:
   pull_request:
     branches: [ main ]
+  workflow_call:
 
 permissions:
   pull-requests: write
@@ -30,6 +31,7 @@ jobs:
 
       - name: Get base branch version
         id: base-version
+        if: github.event_name == 'pull_request'
         shell: pwsh
         run: |
           $BASE_VERSION = git show "${{ github.event.pull_request.base.sha }}:package.json" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version"
@@ -38,6 +40,7 @@ jobs:
 
       - name: Get PR version
         id: pr-version
+        if: github.event_name == 'pull_request'
         shell: pwsh
         run: |
           $PR_VERSION = node -p "require('./package.json').version"
