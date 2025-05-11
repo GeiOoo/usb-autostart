@@ -7,11 +7,11 @@ on:
 jobs:
   check-version:
     runs-on: windows-latest
-    # Get the PR number that was merged into this push
     outputs:
       version_changed: ${{ steps.check.outputs.version_changed }}
       current_version: ${{ steps.check.outputs.current_version }}
       pr_number: ${{ steps.find-pr.outputs.pr_number }}
+      build_run_id: ${{ steps.get-pr-build.outputs.run_id }}
       
     steps:
       - uses: actions/checkout@v4
@@ -37,32 +37,54 @@ jobs:
         run: |
           $prevVersion = "${{ steps.prev-version.outputs.prev_version }}"
           $currVersion = "${{ steps.curr-version.outputs.curr_version }}"
-          $changed = $prevVersion -ne $currVersion
+          $changed = if ($prevVersion -ne $currVersion) { "true" } else { "false" }
           echo "version_changed=$changed" >> $env:GITHUB_OUTPUT
           echo "current_version=$currVersion" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Find associated PR
         id: find-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $pr = git log -1 --pretty=%B | Select-String -Pattern "^Merge pull request #(\d+)"
+          # Get the PR number directly from the merge commit using GitHub CLI
+          $commit = "${{ github.sha }}"
+          $pr = gh api "/repos/${{ github.repository }}/commits/$commit/pulls" | ConvertFrom-Json | Select-Object -First 1
+          
           if ($pr) {
-            $prNumber = $pr.Matches.Groups[1].Value
-            echo "pr_number=$prNumber" >> $env:GITHUB_OUTPUT
+            echo "pr_number=$($pr.number)" >> $env:GITHUB_OUTPUT
+          }
+        shell: pwsh
+        
+      - name: Get PR build info
+        id: get-pr-build
+        if: steps.find-pr.outputs.pr_number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $prNumber = "${{ steps.find-pr.outputs.pr_number }}"
+          $workflow = "build.yml"
+          
+          # Get the most recent successful build run for this PR
+          $run = gh run list --workflow $workflow --json conclusion,databaseId,number --jq '.[] | select(.conclusion=="success")' | ConvertFrom-Json | Select-Object -First 1
+          
+          if ($run) {
+            echo "run_id=$($run.databaseId)" >> $env:GITHUB_OUTPUT
           }
         shell: pwsh
 
   create-release:
     needs: check-version
-    if: needs.check-version.outputs.version_changed == 'True'
+    if: needs.check-version.outputs.version_changed == 'true'
     runs-on: windows-latest
     
     steps:
       - name: Download PR build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-${{ github.event.before }}
+          name: build-${{ needs.check-version.outputs.build_run_id }}
           path: dist
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
