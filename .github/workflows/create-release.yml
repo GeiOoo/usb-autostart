@@ -11,12 +11,12 @@ permissions:
   issues: write
 
 jobs:
-  build:
-    uses: ./.github/workflows/pr-build.yml
-    secrets: inherit
+#   build:
+#     uses: ./.github/workflows/pr-build.yml
+#     secrets: inherit
 
   create-release:
-    needs: build
+    # needs: build
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +56,8 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-${{ github.run_id }}
+        #   name: build-${{ github.run_id }}
+          name: build-14958848974
           path: dist/
 
       - name: Create Release
