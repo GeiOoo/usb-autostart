@@ -18,7 +18,9 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
-
+    outputs:
+      build_info: ${{ steps.store-info.outputs.build_info }}
+    
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,10 +38,21 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Store build info
+        id: store-info
+        run: |
+          $buildInfo = @{
+            runId = "${{ github.run_id }}"
+            prNumber = "${{ github.event.pull_request.number }}"
+            sha = "${{ github.sha }}"
+          } | ConvertTo-Json
+          echo "build_info=$buildInfo" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build
+          name: build-${{ github.run_id }}
           path: dist/
           if-no-files-found: error
 
@@ -63,7 +76,11 @@ jobs:
             ✅ Build completed successfully!
             
             Download the artifacts:
-            - [Build Artifacts](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/build)
+            - [Build Artifacts](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/build-${{ github.run_id }})
             
             These links will directly download the artifacts using nightly.link service.
+            
+            Build Info:
+            - Run ID: ${{ github.run_id }}
+            - Commit: ${{ github.sha }}
           edit-mode: replace

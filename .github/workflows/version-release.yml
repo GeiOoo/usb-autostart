@@ -1,10 +1,9 @@
 name: Version Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: [ main ]
-    paths:
-      - 'package.json'
 
 # Cancel any in-progress job or run
 concurrency:
@@ -13,10 +12,13 @@ concurrency:
 
 jobs:
   check-version-change:
+    # Only run if the PR was merged
+    if: github.event.pull_request.merged == true
     runs-on: windows-latest
     outputs:
       version_changed: ${{ steps.check-version.outputs.changed }}
       current_version: ${{ steps.current-version.outputs.current-version }}
+      build_info: ${{ steps.get-build-info.outputs.build_info }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,6 +45,17 @@ jobs:
           echo "Changed: $changed"
         shell: pwsh
 
+      - name: Get Build Info
+        id: get-build-info
+        run: |
+          # Get the workflow runs for this PR
+          gh api "/repos/${{ github.repository }}/actions/runs?event=pull_request&head_sha=${{ github.event.pull_request.head.sha }}" --jq '.workflow_runs[] | select(.name=="Build Application") | {runId: .id, status: .conclusion}' > build_info.json
+          $buildInfo = Get-Content build_info.json | ConvertFrom-Json
+          echo "build_info=$buildInfo" >> $env:GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+
   create-release:
     needs: check-version-change
     if: needs.check-version-change.outputs.version_changed == 'True'
@@ -67,9 +80,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: build.yml
           workflow_conclusion: success
-          branch: main
-          name: build
-          path: dist
+          run_id: ${{ fromJson(needs.check-version-change.outputs.build_info).runId }}
+          name: build-${{ fromJson(needs.check-version-change.outputs.build_info).runId }}
+          path: artifacts
 
       - name: Create Release
         if: steps.check-tag.outputs.tag_exists == 'false'
@@ -80,10 +93,19 @@ jobs:
           git tag $version
           git push origin $version
           
-          $files = @(
-            "dist/USB-AutoStart-Setup/USB AutoStart Setup ${{ needs.check-version-change.outputs.current_version }}.exe",
-            "dist/USB-AutoStart-Portable/win-unpacked/**/*"
-          )
-
-          gh release create $version $files --title "Release $version" --generate-notes
+          # Move setup.exe and win-unpacked to release folder
+          $setupFile = Get-ChildItem -Path "artifacts" -Recurse -Filter "*Setup*.exe" | Select-Object -First 1
+          $portableDir = Get-ChildItem -Path "artifacts" -Recurse -Filter "win-unpacked" | Select-Object -First 1
+          
+          # Create release directory
+          New-Item -ItemType Directory -Path "release" -Force
+          
+          # Copy setup.exe with proper name
+          Copy-Item $setupFile.FullName -Destination "release/USB-AutoStart-Setup-${{ needs.check-version-change.outputs.current_version }}.exe"
+          
+          # Create and copy portable zip
+          Compress-Archive -Path "$($portableDir.FullName)\*" -DestinationPath "release/USB-AutoStart-Portable-${{ needs.check-version-change.outputs.current_version }}.zip"
+          
+          # Create release with the processed files
+          gh release create $version release/* --title "Release $version" --generate-notes --notes "Built from PR #${{ github.event.pull_request.number }}"
         shell: pwsh
