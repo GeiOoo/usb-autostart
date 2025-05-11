@@ -36,22 +36,18 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Create portable ZIP
-        run: Compress-Archive -Path "dist/win-unpacked" -DestinationPath "dist/USB-AutoStart Portable.zip"
-        shell: pwsh
-
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer
-          path: dist/*.exe
+          name: USB-AutoStart-Setup
+          path: dist/USB-AutoStart Setup.exe
           if-no-files-found: error
 
       - name: Upload Portable version
         uses: actions/upload-artifact@v4
         with:
-          name: windows-portable
-          path: dist/USB-AutoStart Portable.zip
+          name: USB-AutoStart-Portable
+          path: dist/win-unpacked/
           if-no-files-found: error
 
       - name: Find Comment
@@ -74,8 +70,8 @@ jobs:
             ✅ Build completed successfully!
             
             Download the artifacts:
-            - [Windows Installer](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/windows-installer.zip)
-            - [Portable Version](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/windows-portable.zip)
+            - [Windows Installer](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/USB-AutoStart-Setup)
+            - [Portable Version](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/USB-AutoStart-Portable)
             
             These links will directly download the artifacts using nightly.link service.
           edit-mode: replace
