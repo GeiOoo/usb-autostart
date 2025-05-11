@@ -2,7 +2,7 @@ name: Create Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, merge-build ]
 
 permissions:
   contents: write
