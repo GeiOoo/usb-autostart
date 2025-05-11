@@ -2,7 +2,7 @@ name: Create Release
 
 on:
   push:
-    branches: [ main, merge-build ]
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -60,6 +60,13 @@ jobs:
           name: build-${{ github.run_id }}
           path: dist/
 
+      - name: Create portable zip
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          Compress-Archive -Path ".\dist\win-unpacked" -DestinationPath ".\dist\usb-autostart-portable-v$version.zip"
+          Write-Output "Created portable version: usb-autostart-portable-v$version.zip"
+
       - name: Create Release
         if: steps.latest-release.outputs.version != steps.current-version.outputs.version
         uses: softprops/action-gh-release@v1
@@ -68,6 +75,8 @@ jobs:
           name: Release v${{ steps.current-version.outputs.version }}
           draft: false
           prerelease: false
-          files: dist/*
+          files: |
+            dist/*.exe
+            dist/*.zip
           generate_release_notes: true
           token: ${{ secrets.GITHUB_TOKEN }}
