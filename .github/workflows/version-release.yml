@@ -1,0 +1,57 @@
+name: Version Release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'package.json'
+
+jobs:
+  check-and-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from package.json
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      - name: Check if tag exists
+        id: check-tag
+        run: |
+          $tag="v${{ steps.package-version.outputs.current-version}}"
+          $tagExists = git tag -l "$tag"
+          echo "tag_exists=$($tagExists -ne $null)" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Download build artifacts
+        if: steps.check-tag.outputs.tag_exists == 'false'
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: build.yml
+          workflow_conclusion: success
+          branch: main
+          name: |
+            windows-installer
+            windows-portable
+          path: dist
+
+      - name: Create Release
+        if: steps.check-tag.outputs.tag_exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version="v${{ steps.package-version.outputs.current-version}}"
+          git tag $version
+          git push origin $version
+          
+          $files = @(
+            "dist/windows-installer/*.exe",
+            "dist/windows-portable/*.zip"
+          )
+          
+          gh release create $version $files --title "Release $version" --generate-notes
+        shell: pwsh
