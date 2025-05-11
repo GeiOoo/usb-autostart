@@ -7,21 +7,47 @@ on:
       - 'package.json'
 
 jobs:
-  check-and-release:
+  check-version-change:
+    runs-on: windows-latest
+    outputs:
+      version_changed: ${{ steps.check-version.outputs.changed }}
+      current_version: ${{ steps.current-version.outputs.current-version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get current version
+        id: current-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      - name: Get previous version
+        id: check-version
+        run: |
+          git checkout HEAD~1
+          $previousVersion = node -p "require('./package.json').version"
+          git checkout -
+          $currentVersion = "${{ steps.current-version.outputs.current-version }}"
+          $changed = $previousVersion -ne $currentVersion
+          echo "changed=$changed" >> $env:GITHUB_OUTPUT
+          echo "Previous version: $previousVersion"
+          echo "Current version: $currentVersion"
+          echo "Changed: $changed"
+        shell: pwsh
+
+  create-release:
+    needs: check-version-change
+    if: needs.check-version-change.outputs.version_changed == 'True'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Get version from package.json
-        id: package-version
-        uses: martinbeentjes/npm-get-version-action@v1.3.1
-
       - name: Check if tag exists
         id: check-tag
         run: |
-          $tag="v${{ steps.package-version.outputs.current-version}}"
+          $tag="v${{ needs.check-version-change.outputs.current_version }}"
           $tagExists = git tag -l "$tag"
           echo "tag_exists=$($tagExists -ne $null)" >> $env:GITHUB_OUTPUT
         shell: pwsh
@@ -44,7 +70,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $version="v${{ steps.package-version.outputs.current-version}}"
+          $version="v${{ needs.check-version-change.outputs.current_version }}"
           git tag $version
           git push origin $version
           
