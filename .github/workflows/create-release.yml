@@ -2,7 +2,7 @@ name: Create Release
 
 on:
   push:
-    branches: [ main, merge-build ]
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -20,14 +20,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Get previous version
-        id: prev-version
+      - name: Get main version
+        id: main-version
         shell: pwsh
         run: |
-          $PREV_VERSION = git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version"
-          Write-Output "Previous version: $PREV_VERSION"
-          "version=$PREV_VERSION" >> $env:GITHUB_OUTPUT
+          git fetch origin main
+          $MAIN_VERSION = git show origin/main:package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version"
+          Write-Output "Main version: $MAIN_VERSION"
+          "version=$MAIN_VERSION" >> $env:GITHUB_OUTPUT
 
       - name: Get current version
         id: current-version
@@ -44,7 +47,7 @@ jobs:
           path: dist/
 
       - name: Create Release
-        if: steps.prev-version.outputs.version != steps.current-version.outputs.version
+        if: steps.main-version.outputs.version != steps.current-version.outputs.version
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.current-version.outputs.version }}
