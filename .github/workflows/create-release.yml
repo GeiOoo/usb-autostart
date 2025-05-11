@@ -11,12 +11,12 @@ permissions:
   issues: write
 
 jobs:
-#   build:
-#     uses: ./.github/workflows/pr-build.yml
-#     secrets: inherit
+  build:
+    uses: ./.github/workflows/pr-build.yml
+    secrets: inherit
 
   create-release:
-    # needs: build
+    needs: build
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +35,7 @@ jobs:
               "version=$version" >> $env:GITHUB_OUTPUT
             } else {
               Write-Output "No previous releases found"
+              Write-Output "Using default version 0.0.0"
               "version=0.0.0" >> $env:GITHUB_OUTPUT
             }
           } catch {
@@ -56,8 +57,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-        #   name: build-${{ github.run_id }}
-          name: build-14958848974
+          name: build-${{ github.run_id }}
           path: dist/
 
       - name: Create Release
