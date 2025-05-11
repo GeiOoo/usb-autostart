@@ -45,7 +45,8 @@ jobs:
             runId = "${{ github.run_id }}"
             prNumber = "${{ github.event.pull_request.number }}"
             sha = "${{ github.sha }}"
-          } | ConvertTo-Json
+          } | ConvertTo-Json -Compress
+          
           echo "build_info=$buildInfo" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
