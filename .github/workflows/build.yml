@@ -26,7 +26,7 @@ jobs:
         run: npm run build
 
       - name: Create portable ZIP
-        run: Compress-Archive -Path "dist/win-unpacked" -DestinationPath "dist/portable-version.zip"
+        run: Compress-Archive -Path "dist/win-unpacked" -DestinationPath "dist/USB-AutoStart Portable.zip"
         shell: pwsh
 
       - name: Upload Windows installer
@@ -40,5 +40,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-portable
-          path: dist/portable-version.zip
+          path: dist/USB-AutoStart Portable.zip
           if-no-files-found: error

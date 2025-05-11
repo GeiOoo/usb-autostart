@@ -1,6 +1,6 @@
 appId: geiooo.usbautostart
 productName: USB AutoStart
-copyright: Copyright © 2018 Yoshihide Shiono
+copyright: Copyright © 2025 Sascha Geier
 directories:
   output: dist
   buildResources: resources
