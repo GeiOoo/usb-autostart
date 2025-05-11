@@ -7,6 +7,7 @@ on:
 jobs:
   check-version:
     runs-on: windows-latest
+    # Get the PR number that was merged into this push
     outputs:
       version_changed: ${{ steps.check.outputs.version_changed }}
       current_version: ${{ steps.check.outputs.current_version }}
