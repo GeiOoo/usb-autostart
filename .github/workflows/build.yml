@@ -36,11 +36,15 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Get current version
+        id: current-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
           name: USB-AutoStart-Setup
-          path: dist/USB-AutoStart Setup.exe
+          path: dist/USB AutoStart Setup ${{ steps.current-version.outputs.current-version }}.exe
           if-no-files-found: error
 
       - name: Upload Portable version

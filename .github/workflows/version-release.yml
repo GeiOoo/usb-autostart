@@ -66,8 +66,8 @@ jobs:
           workflow_conclusion: success
           branch: main
           name: |
-            windows-installer
-            windows-portable
+            USB-AutoStart-Setup
+            USB-AutoStart-Portable
           path: dist
 
       - name: Create Release
@@ -80,8 +80,8 @@ jobs:
           git push origin $version
           
           $files = @(
-            "dist/windows-installer/*.exe",
-            "dist/windows-portable/*.zip"
+            "dist/USB-AutoStart-Setup/USB AutoStart Setup ${{ needs.check-version-change.outputs.current_version }}.exe",
+            "dist/USB-AutoStart-Portable/**/*"
           )
           
           gh release create $version $files --title "Release $version" --generate-notes
