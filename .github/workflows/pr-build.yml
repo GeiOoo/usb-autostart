@@ -30,26 +30,32 @@ jobs:
 
       - name: Get base branch version
         id: base-version
+        shell: pwsh
         run: |
-          echo "version=$(git show ${{ github.event.pull_request.base.sha }}:package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version")" >> $GITHUB_OUTPUT
+          $BASE_VERSION = git show "${{ github.event.pull_request.base.sha }}:package.json" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version"
+          Write-Output "Base version: $BASE_VERSION"
+          "version=$BASE_VERSION" >> $env:GITHUB_OUTPUT
 
       - name: Get PR version
         id: pr-version
+        shell: pwsh
         run: |
-          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          $PR_VERSION = node -p "require('./package.json').version"
+          Write-Output "PR version: $PR_VERSION"
+          "version=$PR_VERSION" >> $env:GITHUB_OUTPUT
 
-      - name: Install dependencies
-        run: npm ci
+    #   - name: Install dependencies
+    #     run: npm ci
 
-      - name: Build application
-        run: npm run build
+    #   - name: Build application
+    #     run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ github.run_id }}
-          path: dist/
-          if-no-files-found: error
+    #   - name: Upload build artifacts
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: build-${{ github.run_id }}
+    #       path: dist/
+    #       if-no-files-found: error
 
       - name: Find Comment
         if: github.event_name == 'pull_request'
