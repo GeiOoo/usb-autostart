@@ -2,7 +2,7 @@ name: Create Release
 
 on:
   push:
-    branches: [ main, merge-build ]
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -27,13 +27,19 @@ jobs:
         id: latest-release
         shell: pwsh
         run: |
-          $latestRelease = gh api repos/${{ github.repository }}/releases/latest 2>&1
-          if ($LASTEXITCODE -eq 0) {
-            $version = ($latestRelease | ConvertFrom-Json).tag_name -replace '^v',''
-            Write-Output "Latest release version: $version"
-            "version=$version" >> $env:GITHUB_OUTPUT
-          } else {
-            Write-Output "No previous release found"
+          try {
+            $releases = gh api repos/${{ github.repository }}/releases --paginate | ConvertFrom-Json
+            if ($releases.Count -gt 0) {
+              $version = $releases[0].tag_name -replace '^v',''
+              Write-Output "Latest release version: $version"
+              "version=$version" >> $env:GITHUB_OUTPUT
+            } else {
+              Write-Output "No previous releases found"
+              "version=0.0.0" >> $env:GITHUB_OUTPUT
+            }
+          } catch {
+            Write-Output "Failed to fetch releases: $_"
+            Write-Output "Assuming no releases exist"
             "version=0.0.0" >> $env:GITHUB_OUTPUT
           }
         env:
@@ -57,7 +63,7 @@ jobs:
         if: steps.latest-release.outputs.version != steps.current-version.outputs.version
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.current-version.outputs.version }}
+          tag_name: v${{ steps.current-version.outputs.version }}
           name: Release v${{ steps.current-version.outputs.version }}
           draft: false
           prerelease: false

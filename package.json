@@ -3,7 +3,7 @@
     "name": "usb-autostart",
     "description": "Automatically start USB devices when connected",
     "license": "MIT",
-    "version": "1.0.3",
+    "version": "1.0.1",
     "author": "Sascha Geier <throw3n@gmail.com>",
     "main": "app/background.js",
     "scripts": {
