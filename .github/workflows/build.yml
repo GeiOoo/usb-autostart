@@ -36,25 +36,11 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Get current version
-        id: current-version
-        run: |
-          $version = node -p "require('./package.json').version"
-          echo "current-version=$version" >> $env:GITHUB_OUTPUT
-        shell: pwsh
-
-      - name: Upload Windows installer
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: USB-AutoStart-Setup
-          path: dist/USB AutoStart Setup ${{ steps.current-version.outputs.current-version }}.exe
-          if-no-files-found: error
-
-      - name: Upload Portable version
-        uses: actions/upload-artifact@v4
-        with:
-          name: USB-AutoStart-Portable
-          path: dist/win-unpacked/
+          name: build
+          path: dist/
           if-no-files-found: error
 
       - name: Find Comment
@@ -77,8 +63,7 @@ jobs:
             ✅ Build completed successfully!
             
             Download the artifacts:
-            - [Windows Installer](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/USB-AutoStart-Setup)
-            - [Portable Version](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/USB-AutoStart-Portable)
+            - [Build Artifacts](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/build)
             
             These links will directly download the artifacts using nightly.link service.
           edit-mode: replace

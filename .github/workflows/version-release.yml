@@ -68,9 +68,7 @@ jobs:
           workflow: build.yml
           workflow_conclusion: success
           branch: main
-          name: |
-            USB-AutoStart-Setup
-            USB-AutoStart-Portable
+          name: build
           path: dist
 
       - name: Create Release
@@ -86,6 +84,6 @@ jobs:
             "dist/USB-AutoStart-Setup/USB AutoStart Setup ${{ needs.check-version-change.outputs.current_version }}.exe",
             "dist/USB-AutoStart-Portable/**/*"
           )
-          
+
           gh release create $version $files --title "Release $version" --generate-notes
         shell: pwsh
