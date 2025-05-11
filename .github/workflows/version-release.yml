@@ -1,8 +1,7 @@
 name: Version Release
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [ main ]
 
 # Cancel any in-progress job or run
@@ -12,17 +11,31 @@ concurrency:
 
 jobs:
   check-version-change:
-    # Only run if the PR was merged
-    if: github.event.pull_request.merged == true
     runs-on: windows-latest
+    # Get the PR number that was merged into this push
     outputs:
       version_changed: ${{ steps.check-version.outputs.changed }}
       current_version: ${{ steps.current-version.outputs.current-version }}
       build_info: ${{ steps.get-build-info.outputs.build_info }}
+      pr_number: ${{ steps.find-pr.outputs.pr_number }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
+
+      - name: Find merged PR
+        id: find-pr
+        run: |
+          # Get the PR number that was merged into this push
+          $pr = gh api "/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].number'
+          if (-not $pr) {
+            echo "::error::No merged PR found for this push"
+            exit 1
+          }
+          echo "pr_number=$pr" >> $env:GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
 
       - name: Get current version
         id: current-version
@@ -48,10 +61,16 @@ jobs:
       - name: Get Build Info
         id: get-build-info
         run: |
-          # Get the workflow runs for this PR
-          gh api "/repos/${{ github.repository }}/actions/runs?event=pull_request&head_sha=${{ github.event.pull_request.head.sha }}" --jq '.workflow_runs[] | select(.name=="Build Application") | {runId: .id, status: .conclusion}' > build_info.json
-          $buildInfo = Get-Content build_info.json | ConvertFrom-Json
-          echo "build_info=$buildInfo" >> $env:GITHUB_OUTPUT
+          # Get the successful build workflow run for the merged PR
+          $buildRun = gh api "/repos/${{ github.repository }}/actions/runs?event=pull_request&head_sha=${{ github.event.before }}" --jq '.workflow_runs[] | select(.name=="Build Application" and .conclusion=="success") | {runId: .id, status: .conclusion, sha: .head_sha}' | Select-Object -First 1
+          
+          if (-not $buildRun) {
+            echo "::error::No successful build workflow found for merged PR"
+            exit 1
+          }
+          
+          echo "build_info=$buildRun" >> $env:GITHUB_OUTPUT
+          echo "Found build run ID: $($buildRun.runId) for commit $($buildRun.sha)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
@@ -107,5 +126,5 @@ jobs:
           Compress-Archive -Path "$($portableDir.FullName)\*" -DestinationPath "release/USB-AutoStart-Portable-${{ needs.check-version-change.outputs.current_version }}.zip"
           
           # Create release with the processed files
-          gh release create $version release/* --title "Release $version" --generate-notes --notes "Built from PR #${{ github.event.pull_request.number }}"
+          gh release create $version release/* --title "Release $version" --generate-notes --notes "Built from PR #${{ needs.check-version-change.outputs.pr_number }}"
         shell: pwsh
