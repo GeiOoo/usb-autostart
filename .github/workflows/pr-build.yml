@@ -1,8 +1,9 @@
-name: Build Application
+name: PR-Build
 
 on:
   pull_request:
     branches: [ main ]
+  workflow_call:
 
 permissions:
   pull-requests: write
@@ -16,8 +17,6 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
-    outputs:
-      build_info: ${{ steps.store-info.outputs.build_info }}
     
     steps:
       - uses: actions/checkout@v4
@@ -30,23 +29,29 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      - name: Get base branch version
+        id: base-version
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          $BASE_VERSION = git show "${{ github.event.pull_request.base.sha }}:package.json" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version"
+          Write-Output "Base version: $BASE_VERSION"
+          "version=$BASE_VERSION" >> $env:GITHUB_OUTPUT
+
+      - name: Get PR version
+        id: pr-version
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          $PR_VERSION = node -p "require('./package.json').version"
+          Write-Output "PR version: $PR_VERSION"
+          "version=$PR_VERSION" >> $env:GITHUB_OUTPUT
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build application
         run: npm run build
-
-      - name: Store build info
-        id: store-info
-        run: |
-          $buildInfo = @{
-            runId = "${{ github.run_id }}"
-            prNumber = "${{ github.event.pull_request.number }}"
-            sha = "${{ github.sha }}"
-          } | ConvertTo-Json -Compress
-          
-          echo "build_info=$buildInfo" >> $env:GITHUB_OUTPUT
-        shell: pwsh
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -54,15 +59,6 @@ jobs:
           name: build-${{ github.run_id }}
           path: dist/
           if-no-files-found: error
-
-      - name: Find Comment
-        if: github.event_name == 'pull_request'
-        uses: peter-evans/find-comment@v3
-        id: find-comment
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '### Build Artifacts'
 
       - name: Create Comment
         if: github.event_name == 'pull_request'
@@ -72,6 +68,8 @@ jobs:
           body: |
             ### Build Artifacts (Run ID: ${{ github.run_id }})
             ✅ Build completed successfully!
+            
+            ${{ steps.base-version.outputs.version != steps.pr-version.outputs.version && format('📦 Version bump: {0} → {1}', steps.base-version.outputs.version, steps.pr-version.outputs.version) || '' }}
             
             Download the artifacts:
             - [Build Artifacts](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/build-${{ github.run_id }})

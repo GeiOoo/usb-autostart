@@ -1,0 +1,82 @@
+name: Create Release
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/pr-build.yml
+    secrets: inherit
+
+  create-release:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest release version
+        id: latest-release
+        shell: pwsh
+        run: |
+          try {
+            $releases = gh api repos/${{ github.repository }}/releases --paginate | ConvertFrom-Json
+            if ($releases.Count -gt 0) {
+              $version = $releases[0].tag_name -replace '^v',''
+              Write-Output "Latest release version: $version"
+              "version=$version" >> $env:GITHUB_OUTPUT
+            } else {
+              Write-Output "No previous releases found"
+              Write-Output "Using default version 0.0.0"
+              "version=0.0.0" >> $env:GITHUB_OUTPUT
+            }
+          } catch {
+            Write-Output "Failed to fetch releases: $_"
+            Write-Output "Assuming no releases exist"
+            "version=0.0.0" >> $env:GITHUB_OUTPUT
+          }
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Get current version
+        id: current-version
+        shell: pwsh
+        run: |
+          $CURRENT_VERSION = node -p "require('./package.json').version"
+          Write-Output "Current version: $CURRENT_VERSION"
+          "version=$CURRENT_VERSION" >> $env:GITHUB_OUTPUT
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ github.run_id }}
+          path: dist/
+
+      - name: Create portable zip
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          Compress-Archive -Path ".\dist\win-unpacked" -DestinationPath ".\dist\usb-autostart-portable-v$version.zip"
+          Write-Output "Created portable version: usb-autostart-portable-v$version.zip"
+
+      - name: Create Release
+        if: steps.latest-release.outputs.version != steps.current-version.outputs.version
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.current-version.outputs.version }}
+          name: Release v${{ steps.current-version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/*.exe
+            dist/*.zip
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
