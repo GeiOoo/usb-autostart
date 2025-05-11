@@ -74,8 +74,8 @@ jobs:
             ✅ Build completed successfully!
             
             Download the artifacts:
-            - [Windows Installer](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})/artifacts
-            - [Portable Version](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})/artifacts
+            - [Windows Installer](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/windows-installer.zip)
+            - [Portable Version](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/windows-portable.zip)
             
-            These links will take you to the workflow run where you can download the artifacts.
+            These links will directly download the artifacts using nightly.link service.
           edit-mode: replace
