@@ -23,14 +23,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get main version
-        id: main-version
+      - name: Get latest release version
+        id: latest-release
         shell: pwsh
         run: |
-          git fetch origin main
-          $MAIN_VERSION = git show origin/main:package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version"
-          Write-Output "Main version: $MAIN_VERSION"
-          "version=$MAIN_VERSION" >> $env:GITHUB_OUTPUT
+          $latestRelease = gh api repos/${{ github.repository }}/releases/latest 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            $version = ($latestRelease | ConvertFrom-Json).tag_name -replace '^v',''
+            Write-Output "Latest release version: $version"
+            "version=$version" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Output "No previous release found"
+            "version=0.0.0" >> $env:GITHUB_OUTPUT
+          }
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Get current version
         id: current-version
@@ -47,10 +54,10 @@ jobs:
           path: dist/
 
       - name: Create Release
-        if: steps.main-version.outputs.version != steps.current-version.outputs.version
+        if: steps.latest-release.outputs.version != steps.current-version.outputs.version
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.current-version.outputs.version }}
+          tag_name: ${{ steps.current-version.outputs.version }}
           name: Release v${{ steps.current-version.outputs.version }}
           draft: false
           prerelease: false
