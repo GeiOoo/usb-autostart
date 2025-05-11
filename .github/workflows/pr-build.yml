@@ -28,6 +28,16 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      - name: Get base branch version
+        id: base-version
+        run: |
+          echo "version=$(git show ${{ github.event.pull_request.base.sha }}:package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version")" >> $GITHUB_OUTPUT
+
+      - name: Get PR version
+        id: pr-version
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Install dependencies
         run: npm ci
 
@@ -54,10 +64,14 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v3
         with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             ### Build Artifacts (Run ID: ${{ github.run_id }})
             ✅ Build completed successfully!
+            
+            ${{ steps.base-version.outputs.version != steps.pr-version.outputs.version && format('📦 Version bump: {0} → {1}', steps.base-version.outputs.version, steps.pr-version.outputs.version) || '' }}
             
             Download the artifacts:
             - [Build Artifacts](https://nightly.link/${{ github.repository }}/actions/runs/${{ github.run_id }}/build-${{ github.run_id }})
