@@ -2,6 +2,8 @@
 
 A desktop application built with Electron and Next.js that allows you to manage and automatically start applications when a specific USB device is connected to your computer.
 
+Based on the NextTron Repo: https://github.com/saltyshiomix/nextron
+
 ## Features
 
 - 🚀 Launch applications automatically when a specific USB device is connected
