@@ -1,9 +1,10 @@
 name: Version Release
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [ main ]
+    paths:
+      - 'package.json'
 
 # Cancel any in-progress job or run
 concurrency:
@@ -12,13 +13,12 @@ concurrency:
 
 jobs:
   check-version-change:
-    # Only run if the PR was merged
-    if: github.event.pull_request.merged == true
     runs-on: windows-latest
     outputs:
       version_changed: ${{ steps.check-version.outputs.changed }}
       current_version: ${{ steps.current-version.outputs.current-version }}
-      build_info: ${{ steps.get-build-info.outputs.build_info }}
+      pr_number: ${{ steps.get-pr.outputs.pr_number }}
+      run_id: ${{ steps.get-pr.outputs.run_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,13 +45,18 @@ jobs:
           echo "Changed: $changed"
         shell: pwsh
 
-      - name: Get Build Info
-        id: get-build-info
+      - name: Get PR and Build Info
+        id: get-pr
+        if: steps.check-version.outputs.changed == 'True'
         run: |
-          # Get the workflow runs for this PR
-          gh api "/repos/${{ github.repository }}/actions/runs?event=pull_request&head_sha=${{ github.event.pull_request.head.sha }}" --jq '.workflow_runs[] | select(.name=="Build Application") | {runId: .id, status: .conclusion}' > build_info.json
-          $buildInfo = Get-Content build_info.json | ConvertFrom-Json
-          echo "build_info=$buildInfo" >> $env:GITHUB_OUTPUT
+          # Get the PR number that was merged
+          $pr = gh api "/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" | ConvertFrom-Json | Select-Object -First 1
+          echo "pr_number=$($pr.number)" >> $env:GITHUB_OUTPUT
+          
+          # Get the build run ID from the PR
+          $runs = gh api "/repos/${{ github.repository }}/actions/runs?event=pull_request&head_sha=${{ github.event.before }}" | ConvertFrom-Json
+          $buildRun = $runs.workflow_runs | Where-Object { $_.name -eq "Build Application" } | Select-Object -First 1
+          echo "run_id=$($buildRun.id)" >> $env:GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
@@ -80,8 +85,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: build.yml
           workflow_conclusion: success
-          run_id: ${{ fromJson(needs.check-version-change.outputs.build_info).runId }}
-          name: build-${{ fromJson(needs.check-version-change.outputs.build_info).runId }}
+          run_id: ${{ needs.check-version-change.outputs.run_id }}
+          name: build-${{ needs.check-version-change.outputs.run_id }}
           path: artifacts
 
       - name: Create Release
@@ -107,5 +112,5 @@ jobs:
           Compress-Archive -Path "$($portableDir.FullName)\*" -DestinationPath "release/USB-AutoStart-Portable-${{ needs.check-version-change.outputs.current_version }}.zip"
           
           # Create release with the processed files
-          gh release create $version release/* --title "Release $version" --generate-notes --notes "Built from PR #${{ github.event.pull_request.number }}"
+          gh release create $version release/* --title "Release $version" --generate-notes --notes "Built from PR #${{ needs.check-version-change.outputs.pr_number }}"
         shell: pwsh
