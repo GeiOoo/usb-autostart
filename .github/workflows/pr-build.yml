@@ -44,18 +44,18 @@ jobs:
           Write-Output "PR version: $PR_VERSION"
           "version=$PR_VERSION" >> $env:GITHUB_OUTPUT
 
-    #   - name: Install dependencies
-    #     run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    #   - name: Build application
-    #     run: npm run build
+      - name: Build application
+        run: npm run build
 
-    #   - name: Upload build artifacts
-    #     uses: actions/upload-artifact@v4
-    #     with:
-    #       name: build-${{ github.run_id }}
-    #       path: dist/
-    #       if-no-files-found: error
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.run_id }}
+          path: dist/
+          if-no-files-found: error
 
       - name: Find Comment
         if: github.event_name == 'pull_request'
