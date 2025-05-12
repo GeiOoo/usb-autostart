@@ -10,5 +10,8 @@
             "dist/*.exe",
             "dist/*.zip"
         ]
+    },
+    "npm": {
+        "publish": false
     }
 }
