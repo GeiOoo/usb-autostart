@@ -8,6 +8,8 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,11 +28,15 @@ jobs:
       - run: npx release-it --config release-it/version-bump.json --ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get version
+        id: get-version
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
       - run: npm run build
       - name: Create portable ZIP
         run: |
-          $version = (Get-Content package.json | ConvertFrom-Json).version
-          Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/USB AutoStart ${version} Portable.zip"
-      - run: npx release-it --config release-it/create-release.json --ci
+          Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/USB AutoStart ${{ steps.get-version.outputs.version }} Portable.zip"
+      - run: npx release-it -i "${{ steps.get-version.outputs.version }}" --config release-it/create-release.json --ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
