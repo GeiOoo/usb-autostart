@@ -12,6 +12,7 @@
         ]
     },
     "npm": {
-        "publish": false
+        "publish": false,
+        "ignoreVersion": true
     }
 }
