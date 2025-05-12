@@ -1,25 +1,47 @@
 name: Release
 on: workflow_dispatch
+
+# Add concurrency to cancel in-progress runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   release:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
       - name: git config
         run: |
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-      - run: npm install
+          git config user.name "Release-It_Bot"
+          git config user.email "Release-It_Bot@users.noreply.github.com"
+      - run: npm ci
       - run: npx release-it --config release-it/version-bump.json --ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get version
+        id: get-version
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
       - run: npm run build
       - name: Create portable ZIP
         run: |
-          $version = (Get-Content package.json | ConvertFrom-Json).version
-          Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/USB AutoStart ${version} Portable.zip"
-      - run: npx release-it --config release-it/create-release.json --ci
+          Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/USB AutoStart ${{ steps.get-version.outputs.version }} Portable.zip"
+      - run: npx release-it -i "${{ steps.get-version.outputs.version }}" --config release-it/create-release.json --ci --npm.ignoreVersion=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
