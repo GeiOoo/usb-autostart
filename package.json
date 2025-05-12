@@ -11,8 +11,7 @@
         "install-exe": "powershell -Command \"& '.\\dist\\USB AutoStart Setup 1.0.0.exe'\"",
         "build": "nextron build",
         "build:install": "npm run build && npm run install-exe",
-        "postinstall": "electron-builder install-app-deps",
-        "release": "release-it"
+        "postinstall": "electron-builder install-app-deps"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
