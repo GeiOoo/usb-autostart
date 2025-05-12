@@ -33,6 +33,7 @@ jobs:
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "version=$version" >> $env:GITHUB_OUTPUT
+      - run: npm run ci
       - run: npm run build
       - name: Create portable ZIP
         run: |
