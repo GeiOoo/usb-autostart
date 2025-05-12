@@ -1,6 +1,11 @@
 name: Release
 on: workflow_dispatch
 
+# Add concurrency to cancel in-progress runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
   packages: write
@@ -33,7 +38,6 @@ jobs:
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "version=$version" >> $env:GITHUB_OUTPUT
-      - run: npm ci
       - run: npm run build
       - name: Create portable ZIP
         run: |
