@@ -21,9 +21,10 @@ export default function AppGroup() {
         })),
         queryKey: ['appDetails'],
         queryFn: async () => {
-            return await Promise.all(appDataList.map(async data => ({
+            const processList = await window.ipc.getAppListDetails(appDataList.map(app => app.path));
+            return await Promise.all(appDataList.map(async (data, index) => ({
                 data,
-                process: await window.ipc.getAppDetails(data.path)
+                process: processList[index]
             })));
         },
         refetchOnWindowFocus: false,
@@ -46,7 +47,7 @@ export default function AppGroup() {
                 <Collapse in={!expanded}>
                     <Stack direction={'row'} gap={1} flexWrap="wrap">
                         {appList.map(app => (
-                            <AppCardIcon isLoading={isPlaceholderData} processData={app.process as any} key={app.data.name} />
+                            <AppCardIcon isLoading={isPlaceholderData} processData={app.process} key={app.data.name} />
                         ))}
                     </Stack>
                 </Collapse>

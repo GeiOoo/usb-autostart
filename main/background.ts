@@ -173,26 +173,44 @@ ipcMain.handle('open-file-dialog', async (): Promise<string[]> => {
     return result?.filePaths ?? [];
 });
 
-ipcMain.handle('get-app-details', async (event, path: string): Promise<AppLiveData> => {
-    const fileName = path.split('\\').pop() || 'Unknown';
-    const processName = fileName.replace(/\.[^/.]+$/, "");
+ipcMain.handle('get-app-details', async (event, paths: string[]): Promise<AppLiveData[]> => {
+    // Extract process names from file paths
+    const processInfos = paths.map(path => ({
+        path,
+        processName: (path.split('\\').pop() || 'Unknown').replace(/\.[^/.]+$/, "")
+    }));
 
-    let isRunning = false;
+    // Create a PowerShell command that uses an array of process names
+    const processNamesArray = processInfos.map(info => `'${info.processName}'`).join(',');
+    const psCommand = `powershell -Command "$processes = @(${processNamesArray}); Get-Process -Name $processes -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name"`;
+
+    let runningProcesses: Set<string> = new Set();
     try {
-        isRunning = await new Promise((resolve) => {
-            // Use proper PowerShell command syntax
-            exec(`powershell -Command "Get-Process -Name \\"${processName}\\" -ErrorAction SilentlyContinue"`, (error, stdout) => {
-                resolve(stdout.length > 0);
+        const stdout = await new Promise<string>((resolve) => {
+            exec(psCommand, (error, stdout) => {
+                resolve(stdout);
             });
         });
+
+        // Parse the output and get running process names
+        runningProcesses = new Set(
+            stdout.split('\n')
+                .map(line => line.trim())
+                .filter(Boolean)  // Remove empty lines
+        );
     } catch {
-        isRunning = false;
+        // If the command fails, assume no processes are running
     }
 
-    return {
-        icon: (await app.getFileIcon(path, { size: 'large' })),
-        isRunning
-    };
+    // Get icon and running state for each app 
+    const results = await Promise.all(
+        processInfos.map(async ({ path, processName }) => ({
+            icon: (await app.getFileIcon(path, { size: 'large' })).toDataURL(),
+            isRunning: runningProcesses.has(processName)
+        }))
+    );
+
+    return results;
 });
 
 ipcMain.handle('launch-app', async (_event, path: string) => {

@@ -12,7 +12,7 @@ export type AppMetaData = {
 };
 
 export type AppLiveData = {
-    icon: Electron.NativeImage;
+    icon: string;
     isRunning: boolean;
 };
 
@@ -33,7 +33,7 @@ export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData, proces
         <Stack component={Card} key={path} raised={processData?.isRunning} flex={1} minWidth={250} maxWidth={400}>
             <CardHeader
                 action={<IconButton size='small' color='error' onClick={handleDelete} ><Delete /></IconButton>}
-                avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={processData.icon.toDataURL()} height={32} width={32} />}
+                avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={processData.icon} height={32} width={32} />}
                 title={isLoading ?
                     <Skeleton width={nameSkeletonLengthInPixel} height={28} />
                     :
