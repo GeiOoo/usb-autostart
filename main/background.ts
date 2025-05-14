@@ -8,31 +8,61 @@ import { createWindow } from './helpers';
 const isProd = process.env.NODE_ENV === 'production';
 const APP_NAME = 'USB AutoStart';
 
-// Function to enable/disable autostart
-async function setAutoStart(enable: boolean): Promise<void> {
-    const appPath = app.getPath('exe');
-    const command = enable ?
-        `REG ADD "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /t REG_SZ /F /D "${appPath}"` :
-        `REG DELETE "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /F`;
-
+// Helper function to execute PowerShell commands
+async function executePsCommand(command: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        exec(command, (error) => {
+        exec(`powershell -Command "${command}"`, (error, stdout) => {
             if (error) reject(error);
-            else resolve();
+            else resolve(stdout.trim());
         });
     });
 }
 
+// Helper function to get process info from paths
+function getProcessInfoFromPaths(paths: string[] | string) {
+    const pathArray = Array.isArray(paths) ? paths : [paths];
+    return pathArray.map(path => ({
+        path,
+        // Convert to lowercase for case-insensitive comparison
+        processName: path.split('\\').pop()?.replace(/\.[^/.]+$/, "").toLowerCase() || 'unknown'
+    }));
+}
+
+// Helper function to check running processes
+async function getRunningProcesses(processNames: string[]): Promise<Set<string>> {
+    try {
+        // Convert process names to lowercase and wrap in quotes
+        const processNamesArray = processNames.map(name => `'${name.toLowerCase()}'`).join(',');
+        // Use -ErrorAction SilentlyContinue to suppress errors and Select Name to get just the process names
+        const stdout = await executePsCommand(`Get-Process | Select-Object -ExpandProperty ProcessName | ForEach-Object { $_.ToLower() } | Where-Object { @(${processNamesArray}) -contains $_ }`);
+
+        // Split output and create set of running processes
+        return new Set(stdout.split('\n')
+            .map(line => line.trim().toLowerCase())
+            .filter(Boolean));
+    } catch {
+        return new Set();
+    }
+}
+
+// Function to enable/disable autostart
+async function setAutoStart(enable: boolean): Promise<void> {
+    const appPath = app.getPath('exe');
+    const command = enable
+        ? `REG ADD "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /t REG_SZ /F /D "${appPath}"`
+        : `REG DELETE "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}" /F`;
+
+    await executePsCommand(command);
+}
+
 // Function to check if autostart is enabled
 async function isAutoStartEnabled(): Promise<boolean> {
-    return new Promise((resolve) => {
-        exec(
-            `REG QUERY "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}"`,
-            (error) => {
-                resolve(!error); // If there's no error, the registry key exists
-            }
-        );
-    });
+    try {
+        await executePsCommand(`REG QUERY "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "${APP_NAME}"`);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 if (isProd) {
@@ -86,7 +116,7 @@ let mainWindow: ReturnType<typeof createWindow>;
         tray = new Tray(icon);
     }
 
-    const updateContextMenu = async () => {
+    async function updateContextMenu() {
         const autoStartEnabled = await isAutoStartEnabled();
         const contextMenu = Menu.buildFromTemplate([
             {
@@ -120,7 +150,7 @@ let mainWindow: ReturnType<typeof createWindow>;
         ]);
 
         tray.setContextMenu(contextMenu);
-    };
+    }
 
     // Initial menu setup
     await updateContextMenu();
@@ -173,120 +203,40 @@ ipcMain.handle('open-file-dialog', async (): Promise<string[]> => {
     return result?.filePaths ?? [];
 });
 
-ipcMain.handle('get-app-details', async (event, paths: string[]): Promise<AppLiveData[]> => {
-    // Extract process names from file paths
-    const processInfos = paths.map(path => ({
-        path,
-        processName: (path.split('\\').pop() || 'Unknown').replace(/\.[^/.]+$/, "")
-    }));
+ipcMain.handle('get-app-details', async (_event, paths: string[]): Promise<AppLiveData[]> => {
+    const processInfos = getProcessInfoFromPaths(paths);
+    const runningProcesses = await getRunningProcesses(processInfos.map(info => info.processName));
 
-    // Create a PowerShell command that uses an array of process names
-    const processNamesArray = processInfos.map(info => `'${info.processName}'`).join(',');
-    const psCommand = `powershell -Command "$processes = @(${processNamesArray}); Get-Process -Name $processes -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name"`;
-
-    let runningProcesses: Set<string> = new Set();
-    try {
-        const stdout = await new Promise<string>((resolve) => {
-            exec(psCommand, (error, stdout) => {
-                resolve(stdout);
-            });
-        });
-
-        // Parse the output and get running process names
-        runningProcesses = new Set(
-            stdout.split('\n')
-                .map(line => line.trim())
-                .filter(Boolean)  // Remove empty lines
-        );
-    } catch {
-        // If the command fails, assume no processes are running
-    }
-
-    // Get icon and running state for each app 
-    const results = await Promise.all(
+    return Promise.all(
         processInfos.map(async ({ path, processName }) => ({
             icon: (await app.getFileIcon(path, { size: 'large' })).toDataURL(),
             isRunning: runningProcesses.has(processName)
         }))
     );
-
-    return results;
 });
 
 ipcMain.handle('launch-app', async (_event, paths: string[] | string) => {
-    // Handle both single path and array of paths
-    const pathArray = Array.isArray(paths) ? paths : [paths];
+    const processInfos = getProcessInfoFromPaths(paths);
+    const runningProcesses = await getRunningProcesses(processInfos.map(info => info.processName));
 
-    // Extract process names and create process info array
-    const processInfos = pathArray.map(path => ({
-        path,
-        processName: (path.split('\\').pop() || '').replace(/\.[^/.]+$/, "")
-    }));
-
-    // Check which processes are already running
-    const processNamesArray = processInfos.map(info => `'${info.processName}'`).join(',');
-    const psCommand = `powershell -Command "$processes = @(${processNamesArray}); Get-Process -Name $processes -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name"`;
-
-    try {
-        const stdout = await new Promise<string>((resolve) => {
-            exec(psCommand, (error, stdout) => {
-                resolve(stdout);
-            });
-        });
-
-        // Get set of running processes
-        const runningProcesses = new Set(
-            stdout.split('\n')
-                .map(line => line.trim())
-                .filter(Boolean)
-        );
-
-        // Launch only non-running applications
-        processInfos.forEach(({ path, processName }) => {
-            if (!runningProcesses.has(processName)) {
-                spawn(path, [], {
-                    detached: true,
-                    stdio: 'ignore'
-                }).unref();
-            }
-        });
-    } catch {
-        // If process check fails, try to launch all
-        processInfos.forEach(({ path }) => {
-            spawn(path, [], {
-                detached: true,
-                stdio: 'ignore'
-            }).unref();
-        });
-    }
-});
-
-ipcMain.handle('stop-app', async (_event, paths: string[] | string) => {
-    // Handle both single path and array of paths
-    const pathArray = Array.isArray(paths) ? paths : [paths];
-
-    // Extract process names
-    const processInfos = pathArray.map(path => ({
-        path,
-        processName: (path.split('\\').pop() || '').replace(/\.[^/.]+$/, "")
-    }));
-
-    // Create PowerShell command to stop all processes
-    const processNamesArray = processInfos.map(info => `'${info.processName}'`).join(',');
-    const psCommand = `powershell -Command "$processes = @(${processNamesArray}); Stop-Process -Name $processes -ErrorAction SilentlyContinue"`;
-
-    return new Promise((resolve) => {
-        exec(psCommand, (error) => {
-            resolve(null);
-        });
+    processInfos.forEach(({ path, processName }) => {
+        if (!runningProcesses.has(processName)) {
+            spawn(path, [], { detached: true, stdio: 'ignore' }).unref();
+        }
     });
 });
 
-// Add new IPC handlers for autostart
-ipcMain.handle('is-autostart-enabled', async () => {
-    return isAutoStartEnabled();
+ipcMain.handle('stop-app', async (_event, paths: string[] | string) => {
+    const processInfos = getProcessInfoFromPaths(paths);
+    const processNamesArray = processInfos.map(info => `'${info.processName}'`).join(',');
+
+    try {
+        await executePsCommand(`$processes = @(${processNamesArray}); Stop-Process -Name $processes -ErrorAction SilentlyContinue`);
+    } catch {
+        // Ignore errors when stopping processes
+    }
 });
 
-ipcMain.handle('set-autostart', async (_event, enable: boolean) => {
-    return setAutoStart(enable);
-});
+// Add new IPC handlers for autostart
+ipcMain.handle('is-autostart-enabled', isAutoStartEnabled);
+ipcMain.handle('set-autostart', (_event, enable: boolean) => setAutoStart(enable));
