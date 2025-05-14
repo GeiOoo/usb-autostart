@@ -30,7 +30,7 @@ jobs:
           git config user.name "Release-It_Bot"
           git config user.email "Release-It_Bot@users.noreply.github.com"
       - run: npm ci
-      - run: npx release-it --ci
+      - run: npx release-it --config release-it/create-release.json --ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     #   - name: Get version
