@@ -30,18 +30,18 @@ jobs:
           git config user.name "Release-It_Bot"
           git config user.email "Release-It_Bot@users.noreply.github.com"
       - run: npm ci
-      - run: npx release-it --config release-it/version-bump.json --ci
+      - run: npx release-it --ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Get version
-        id: get-version
-        run: |
-          $version = (Get-Content package.json | ConvertFrom-Json).version
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-      - run: npm run build
-      - name: Create portable ZIP
-        run: |
-          Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/USB AutoStart ${{ steps.get-version.outputs.version }} Portable.zip"
-      - run: npx release-it -i "${{ steps.get-version.outputs.version }}" --config release-it/create-release.json --ci --npm.ignoreVersion=true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   - name: Get version
+    #     id: get-version
+    #     run: |
+    #       $version = (Get-Content package.json | ConvertFrom-Json).version
+    #       echo "version=$version" >> $env:GITHUB_OUTPUT
+    #   - run: npm run build
+    #   - name: Create portable ZIP
+    #     run: |
+    #       Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/USB AutoStart ${{ steps.get-version.outputs.version }} Portable.zip"
+    #   - run: npx release-it -i "${{ steps.get-version.outputs.version }}" --config release-it/create-release.json --ci --npm.ignoreVersion=true
+    #     env:
+    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
