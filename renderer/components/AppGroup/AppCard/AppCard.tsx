@@ -49,11 +49,11 @@ export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData, proces
                     {...processData?.isRunning ? {
                         children: 'Stop',
                         startIcon: <Stop />,
-                        onClick: () => window.ipc.stopApp(path)
+                        onClick: () => window.ipc.stopApp([path])
                     } : {
                         children: 'Start',
                         startIcon: <PlayArrow />,
-                        onClick: () => window.ipc.launchApp(path)
+                        onClick: () => window.ipc.launchApp([path])
                     }}
                 />
                 <IconButton onClick={() => setShowSettingsDialog(true)}><Settings /></IconButton>

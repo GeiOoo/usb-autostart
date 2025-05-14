@@ -213,39 +213,70 @@ ipcMain.handle('get-app-details', async (event, paths: string[]): Promise<AppLiv
     return results;
 });
 
-ipcMain.handle('launch-app', async (_event, path: string) => {
-    const fileName = path.split('\\').pop() || '';
-    const processName = fileName.replace(/\.[^/.]+$/, "");
+ipcMain.handle('launch-app', async (_event, paths: string[] | string) => {
+    // Handle both single path and array of paths
+    const pathArray = Array.isArray(paths) ? paths : [paths];
 
-    // Check if already running
+    // Extract process names and create process info array
+    const processInfos = pathArray.map(path => ({
+        path,
+        processName: (path.split('\\').pop() || '').replace(/\.[^/.]+$/, "")
+    }));
+
+    // Check which processes are already running
+    const processNamesArray = processInfos.map(info => `'${info.processName}'`).join(',');
+    const psCommand = `powershell -Command "$processes = @(${processNamesArray}); Get-Process -Name $processes -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name"`;
+
     try {
-        const isRunning = await new Promise<boolean>((resolve) => {
-            // Use proper PowerShell command syntax
-            exec(`powershell -Command "Get-Process -Name \\"${processName}\\" -ErrorAction SilentlyContinue"`, (error, stdout) => {
-                resolve(stdout.length > 0);
+        const stdout = await new Promise<string>((resolve) => {
+            exec(psCommand, (error, stdout) => {
+                resolve(stdout);
             });
         });
 
-        if (isRunning) {
-            return; // Process already running
-        }
-    } catch {
-        // Process not running, continue with launch
-    }
+        // Get set of running processes
+        const runningProcesses = new Set(
+            stdout.split('\n')
+                .map(line => line.trim())
+                .filter(Boolean)
+        );
 
-    spawn(path, [], {
-        detached: true,
-        stdio: 'ignore'
-    }).unref(); // Unref to allow the child to run independently
+        // Launch only non-running applications
+        processInfos.forEach(({ path, processName }) => {
+            if (!runningProcesses.has(processName)) {
+                spawn(path, [], {
+                    detached: true,
+                    stdio: 'ignore'
+                }).unref();
+            }
+        });
+    } catch {
+        // If process check fails, try to launch all
+        processInfos.forEach(({ path }) => {
+            spawn(path, [], {
+                detached: true,
+                stdio: 'ignore'
+            }).unref();
+        });
+    }
 });
 
-ipcMain.handle('stop-app', async (_event, path: string) => {
-    const fileName = path.split('\\').pop() || '';
-    const processName = fileName.replace(/\.[^/.]+$/, "");
+ipcMain.handle('stop-app', async (_event, paths: string[] | string) => {
+    // Handle both single path and array of paths
+    const pathArray = Array.isArray(paths) ? paths : [paths];
+
+    // Extract process names
+    const processInfos = pathArray.map(path => ({
+        path,
+        processName: (path.split('\\').pop() || '').replace(/\.[^/.]+$/, "")
+    }));
+
+    // Create PowerShell command to stop all processes
+    const processNamesArray = processInfos.map(info => `'${info.processName}'`).join(',');
+    const psCommand = `powershell -Command "$processes = @(${processNamesArray}); Stop-Process -Name $processes -ErrorAction SilentlyContinue"`;
 
     return new Promise((resolve) => {
-        // Use proper PowerShell command syntax
-        exec(`powershell -Command "Stop-Process -Name \\"${processName}\\" -ErrorAction SilentlyContinue"`, (error) => {
+        exec(psCommand, (error) => {
             resolve(null);
         });
     });

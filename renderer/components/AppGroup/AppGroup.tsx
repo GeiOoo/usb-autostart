@@ -91,14 +91,10 @@ export default function AppGroup() {
     }
 
     async function handleStartAll() {
-        for (const data of appDataList) {
-            await window.ipc.launchApp(data.path);
-        }
+        await window.ipc.launchApp(appDataList.map(data => data.path));
     }
 
     async function handleStopAll() {
-        for (const data of appDataList) {
-            await window.ipc.stopApp(data.path);
-        }
+        await window.ipc.stopApp(appDataList.map(data => data.path));
     }
 }
