@@ -31,6 +31,8 @@ const handler = {
     },
     setAutoStart(enable: boolean): Promise<void> {
         return ipcRenderer.invoke('set-autostart', enable);
+    }, getRunningProcesses(search: string): Promise<{ name: string, path: string; }[]> {
+        return ipcRenderer.invoke('get-running-processes', search);
     }
 };
 
