@@ -17,13 +17,13 @@ const handler = {
     openFileDialog(): Promise<string[]> {
         return ipcRenderer.invoke('open-file-dialog');
     },
-    getAppDetails(path: string): Promise<AppLiveData> {
-        return ipcRenderer.invoke('get-app-details', path);
+    getAppListDetails(paths: string[]): Promise<AppLiveData[]> {
+        return ipcRenderer.invoke('get-app-details', paths);
     },
-    launchApp(path: string): Promise<void> {
+    launchApp(path: string[]): Promise<void> {
         return ipcRenderer.invoke('launch-app', path);
     },
-    stopApp(path: string): Promise<void> {
+    stopApp(path: string[]): Promise<void> {
         return ipcRenderer.invoke('stop-app', path);
     },
     isAutoStartEnabled(): Promise<boolean> {
