@@ -1,7 +1,7 @@
-import { Add, ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material';
-import { Autocomplete, Button, Collapse, IconButton, Paper, Stack, TextField } from '@mui/material';
+import { Add, ArrowDropDown, ArrowDropUp, PlayArrow, Search, Stop } from '@mui/icons-material';
+import { Autocomplete, Button, ButtonGroup, Collapse, IconButton, Paper, Stack, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useLocalStorageState from '../../hooks/useLocalStorageState';
 import UsbSelect from '../UsbSelect';
 import AppCard, { AppMetaData } from './AppCard/AppCard';
@@ -14,9 +14,16 @@ interface Process {
 
 export default function AppGroup() {
     const [expanded, setExpanded] = useState(false);
+    const [showSearch, setShowSearch] = useState(false);
     const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
     const [searchText, setSearchText] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const handleShowSearch = () => {
+        setShowSearch(true);
+        // Focus will be handled by autoFocus prop
+    };
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -29,7 +36,7 @@ export default function AppGroup() {
     // Add query for running processes
     const { data: runningProcesses = [], isFetching } = useQuery({
         queryKey: ['runningProcesses', debouncedSearch],
-        queryFn: () => debouncedSearch ? window.ipc.getRunningProcesses(debouncedSearch) : Promise.resolve([]),
+        queryFn: async () => debouncedSearch ? await window.ipc.getRunningProcesses(debouncedSearch) : [],
         enabled: debouncedSearch.length > 0
     });
 
@@ -53,44 +60,63 @@ export default function AppGroup() {
         refetchInterval: 1000,
     });
 
+    const sortedAppList = useMemo(() => {
+        return appList
+            .toSorted((a, b) => a.data.name.localeCompare(b.data.name));
+    }, [appList]);
+
 
     return (
         <Stack height={'100vh'} >
             <Stack component={Paper} padding={2} gap={2}>
-                <Stack direction="row" gap={2}>
+                <Stack direction="row" gap={2} alignItems={'center'}>
                     <IconButton onClick={() => setExpanded(prev => !prev)} sx={{ alignSelf: 'center' }}>
                         {expanded ? <ArrowDropUp /> : <ArrowDropDown />}
-                    </IconButton>                    <Autocomplete
-                        size="small"
-                        sx={{ minWidth: 300 }}
-                        options={runningProcesses}
-                        loading={isFetching}
-                        value={null}
-                        getOptionLabel={(option: Process) => option.name}
-                        onInputChange={(_event, value) => setSearchText(value)}
-                        onChange={(_event, process) => {
-                            if (process) {
-                                handleAddApp(process.path);
+                    </IconButton>
+                    {showSearch ? (
+                        <Autocomplete
+                            size="small"
+                            sx={{ minWidth: 300 }}
+                            open={true}
+                            options={runningProcesses}
+                            loading={isFetching}
+                            value={null}
+                            getOptionLabel={(option: Process) => option.name}
+                            onInputChange={(_event, value) => setSearchText(value)}
+                            onChange={(_event, process) => {
+                                if (process) {
+                                    handleAddApp(process.path);
+                                    setSearchText('');
+                                    setShowSearch(false);
+                                }
+                            }}
+                            onBlur={() => {
+                                setShowSearch(false);
                                 setSearchText('');
-                            }
-                        }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Search running processes"
-                                placeholder="Type to search..."
-                                value={searchText}
-                            />
-                        )}
-                    />
-                    <Button size='small' startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    inputRef={searchInputRef}
+                                    autoFocus
+                                    label="Search running processes"
+                                    placeholder="Type to search..."
+                                />
+                            )}
+                        />
+                    ) : (
+                        <ButtonGroup>
+                            <Button size='small' startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
+                            <Button size='small' startIcon={<Search />} variant='outlined' onClick={handleShowSearch}>processes</Button>
+                        </ButtonGroup>
+                    )}
                     <UsbSelect onSelectedUsbConnected={handleStartAll} onSelectedUsbDisconnected={handleStopAll} />
                     <Button size='small' startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
                     <Button size='small' startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
                 </Stack>
                 <Collapse in={!expanded}>
                     <Stack direction={'row'} gap={1} flexWrap="wrap">
-                        {appList.map(app => (
+                        {sortedAppList.map(app => (
                             <AppCardIcon isLoading={isPlaceholderData} processData={app.process} key={app.data.name} />
                         ))}
                     </Stack>
@@ -99,8 +125,7 @@ export default function AppGroup() {
             <Stack p={2}>
                 <Collapse in={expanded} >
                     <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'}>
-                        {appList
-                            .toSorted((a, b) => a.data.name.localeCompare(b.data.name))
+                        {sortedAppList
                             .map(app => (
                                 <AppCard
                                     key={app.data.path}
