@@ -1,15 +1,37 @@
 import { Add, ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material';
-import { Button, Collapse, IconButton, Paper, Stack } from '@mui/material';
+import { Autocomplete, Button, Collapse, IconButton, Paper, Stack, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useLocalStorageState from '../../hooks/useLocalStorageState';
 import UsbSelect from '../UsbSelect';
 import AppCard, { AppMetaData } from './AppCard/AppCard';
 import AppCardIcon from './AppCard/AppCardIcon';
 
+interface Process {
+    name: string;
+    path: string;
+}
+
 export default function AppGroup() {
     const [expanded, setExpanded] = useState(false);
     const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
+    const [searchText, setSearchText] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchText);
+        }, 200);
+
+        return () => clearTimeout(timer);
+    }, [searchText]);
+
+    // Add query for running processes
+    const { data: runningProcesses = [], isFetching } = useQuery({
+        queryKey: ['runningProcesses', debouncedSearch],
+        queryFn: () => debouncedSearch ? window.ipc.getRunningProcesses(debouncedSearch) : Promise.resolve([]),
+        enabled: debouncedSearch.length > 0
+    });
 
     const { data: appList, isPlaceholderData } = useQuery({
         placeholderData: appDataList.map(data => ({
@@ -38,7 +60,29 @@ export default function AppGroup() {
                 <Stack direction="row" gap={2}>
                     <IconButton onClick={() => setExpanded(prev => !prev)} sx={{ alignSelf: 'center' }}>
                         {expanded ? <ArrowDropUp /> : <ArrowDropDown />}
-                    </IconButton>
+                    </IconButton>                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 300 }}
+                        options={runningProcesses}
+                        loading={isFetching}
+                        value={null}
+                        getOptionLabel={(option: Process) => option.name}
+                        onInputChange={(_event, value) => setSearchText(value)}
+                        onChange={(_event, process) => {
+                            if (process) {
+                                handleAddApp(process.path);
+                                setSearchText('');
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Search running processes"
+                                placeholder="Type to search..."
+                                value={searchText}
+                            />
+                        )}
+                    />
                     <Button size='small' startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
                     <UsbSelect onSelectedUsbConnected={handleStartAll} onSelectedUsbDisconnected={handleStopAll} />
                     <Button size='small' startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
@@ -96,5 +140,17 @@ export default function AppGroup() {
 
     async function handleStopAll() {
         await window.ipc.stopApp(appDataList.map(data => data.path));
+    }
+
+    function handleAddApp(path: string) {
+        setAppDataList(prev => {
+            if (prev.some(app => app.path === path)) {
+                return prev;
+            }
+            return [...prev, {
+                name: path.split('\\').pop() || '',
+                path
+            }];
+        });
     }
 }
