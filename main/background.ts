@@ -240,3 +240,46 @@ ipcMain.handle('stop-app', async (_event, paths: string[] | string) => {
 // Add new IPC handlers for autostart
 ipcMain.handle('is-autostart-enabled', isAutoStartEnabled);
 ipcMain.handle('set-autostart', (_event, enable: boolean) => setAutoStart(enable));
+ipcMain.handle('get-running-processes', async (_event, search: string): Promise<{ name: string, path: string; }[]> => {
+    try {
+        const command = `
+            Get-Process | Where-Object { 
+                $null -ne $_.Path -and 
+                $_.Path -like '*.exe' -and 
+                $_.Path -notlike '*\\Windows\\*' -and 
+                $_.Path -notlike '*\\Microsoft.NET\\*' 
+            } | 
+            Group-Object -Property Path | 
+            ForEach-Object {
+                $process = $_.Group[0]; 
+                @{
+                    name = ($process.ProcessName);
+                    path = $process.Path;
+                }
+            } | 
+            ConvertTo-Json -Compress
+        `.replace(/\s+/g, ' ').trim();
+
+        const stdout = await executePsCommand(command);
+
+        if (!stdout.trim()) return [];
+
+        const processes: { name: string; path: string; }[] = JSON.parse(stdout);
+        if (!Array.isArray(processes)) {
+            return processes ? [processes] : [];
+        }
+
+        // If there's no search, return all processes
+        if (!search) return processes;
+
+        // Do case-insensitive search once
+        const searchLower = search.toLowerCase();
+        return processes.filter(p =>
+            p.name.toLowerCase().includes(searchLower) ||
+            p.path.toLowerCase().includes(searchLower)
+        );
+    } catch (error) {
+        console.error('Error getting processes:', error);
+        return [];
+    }
+});
