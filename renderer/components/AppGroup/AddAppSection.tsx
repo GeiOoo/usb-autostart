@@ -3,16 +3,9 @@ import { Autocomplete, Button, ButtonGroup, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 
-interface Process {
-    name: string;
-    path: string;
-}
-
-interface AddAppSectionProps {
+export default function AddAppSection({ onAddApp }: {
     onAddApp: (paths?: string[]) => Promise<void>;
-}
-
-export default function AddAppSection({ onAddApp }: AddAppSectionProps) {
+}) {
     const [showSearch, setShowSearch] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -51,7 +44,7 @@ export default function AddAppSection({ onAddApp }: AddAppSectionProps) {
         options={data}
         loading={isFetching}
         value={null}
-        getOptionLabel={(option: Process) => option.name}
+        getOptionLabel={option => option.name}
         onInputChange={(_event, value) => setSearchText(value)}
         onChange={(_event, process) => {
             if (process) {
