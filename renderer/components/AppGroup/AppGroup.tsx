@@ -2,7 +2,7 @@ import { ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material
 import { Button, Collapse, IconButton, Paper, Stack } from '@mui/material';
 import { Prisma } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import UsbSelect from '../UsbSelect';
 import AddAppSection from './AddAppSection';
 import AppCard from './AppCard/AppCard';
@@ -37,6 +37,19 @@ export default function AppGroup() {
         refetchInterval: 1000,
         enabled: !basePlaceholderData
     });
+
+    useEffect(() => {
+        if (!isPlaceholderData && appList.length === 0) {
+            const storage = localStorage.getItem('appDataList');
+            if (!storage) return;
+
+            try {
+                const value = JSON.parse(storage) as Prisma.AppGetPayload<any>[];
+                addApp(value.map(app => app.path));
+            } catch { }
+            localStorage.removeItem('appDataList');
+        }
+    }, [data, isPlaceholderData]);
 
     const sortedAppList = useMemo(() => {
         return appList
