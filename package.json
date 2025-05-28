@@ -11,7 +11,13 @@
         "install-exe": "powershell -Command \"& '.\\dist\\USB AutoStart Setup 1.0.0.exe'\"",
         "build": "nextron build",
         "build:install": "npm run build && npm run install-exe",
-        "postinstall": "electron-builder install-app-deps"
+        "postinstall": "electron-builder install-app-deps",
+        "db:migrate": "npx prisma migrate dev",
+        "db:reset": "npx prisma migrate reset -f",
+        "db:open": "npx prisma studio"
+    },
+    "prisma": {
+        "schema": "prisma/schema"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
@@ -19,6 +25,7 @@
         "@fontsource/roboto": "^5.2.5",
         "@mui/icons-material": "^7.0.2",
         "@mui/material": "^7.0.2",
+        "@prisma/client": "^6.8.2",
         "@tanstack/react-query": "^5.75.2",
         "electron-serve": "^1.3.0",
         "electron-store": "^8.2.0"
@@ -30,6 +37,7 @@
         "electron-builder": "^24.13.3",
         "next": "^14.2.4",
         "nextron": "^9.5.0",
+        "prisma": "^6.8.2",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "release-it": "^19.0.2",

@@ -93,6 +93,8 @@ let mainWindow: ReturnType<typeof createWindow>;
 ; (async () => {
     await app.whenReady();
 
+    await executePsCommand('npx prisma migrate deploy');
+
     mainWindow = createWindow('main', {
         title: 'USB-AutoStart',
         width: 1400,
