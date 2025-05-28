@@ -16,17 +16,17 @@ export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData, proces
     data: Prisma.AppGetPayload<any>;
     processData: AppLiveData;
     isLoading: boolean;
-    onDeleteApp: (path: string) => void;
-    onUpdateAppMetaData: (oldPath: string, newData: typeof data) => void;
+    onDeleteApp: (id: string) => void;
+    onUpdateAppMetaData: (id: string, newData: typeof data) => void;
 }) {
-    const { path } = data;
+    const { id, path } = data;
 
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
 
     const nameSkeletonLengthInPixel = path.split('\\').pop()?.length * 8 || 0;
 
     return (
-        <Stack component={Card} key={path} raised={processData?.isRunning} flex={1} minWidth={250} maxWidth={400}>
+        <Stack component={Card} key={id} raised={processData?.isRunning} flex={1} minWidth={250} maxWidth={400}>
             <CardHeader
                 action={<IconButton size='small' color='error' onClick={handleDelete} ><Delete /></IconButton>}
                 avatar={isLoading ? <Skeleton variant='circular' width={32} height={32} /> : <Image alt='icon' src={processData.icon} height={32} width={32} />}
@@ -65,6 +65,6 @@ export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData, proces
     );
 
     function handleDelete() {
-        onDeleteApp(path);
+        onDeleteApp(id);
     }
 }

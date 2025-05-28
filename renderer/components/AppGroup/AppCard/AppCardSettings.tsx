@@ -1,12 +1,12 @@
 import { UploadFile } from '@mui/icons-material';
 import { Button, DialogActions, DialogContent, DialogTitle, IconButton, Stack, TextField } from '@mui/material';
+import { Prisma } from '@prisma/client';
 import { FormEvent, useState } from 'react';
-import { AppMetaData } from './AppCard';
 
 export default function AppCardSettings({ data, closeDialog, updateAppMetaData }: {
-    data: AppMetaData;
+    data: Prisma.AppGetPayload<any>;
     closeDialog: () => void;
-    updateAppMetaData: (path: string, newData: AppMetaData) => void;
+    updateAppMetaData: (id: string, newData: Prisma.AppUpdateInput) => void;
 }) {
     const [name, setName] = useState(data.name);
     const [path, setPath] = useState(data.path);
@@ -52,7 +52,7 @@ export default function AppCardSettings({ data, closeDialog, updateAppMetaData }
 
     function handleSave(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        updateAppMetaData(data.path, { name, path });
+        updateAppMetaData(data.id, { name, path });
         closeDialog();
     }
 }

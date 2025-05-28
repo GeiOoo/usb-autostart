@@ -1,5 +1,5 @@
 model App {
     id   String @id @default(cuid())
     name String
-    path String @unique
+    path String
 }

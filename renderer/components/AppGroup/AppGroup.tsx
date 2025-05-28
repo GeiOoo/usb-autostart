@@ -1,5 +1,6 @@
 import { ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material';
 import { Button, Collapse, IconButton, Paper, Stack } from '@mui/material';
+import { Prisma } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import UsbSelect from '../UsbSelect';
@@ -87,6 +88,11 @@ export default function AppGroup() {
         const pathList = paths ?? await window.ipc.openFileDialog();
 
         for (const path of pathList) {
+            if (data.find(app => app.path === path)) {
+                console.warn(`App with path ${path} already exists.`);
+                continue;
+            }
+
             await window.ipc.db.app.create({
                 data: {
                     name: path.split('\\').pop() || '',
@@ -98,15 +104,15 @@ export default function AppGroup() {
         refetch();
     };
 
-    async function handleDeleteApp(path: string) {
-        await window.ipc.db.app.delete({ where: { path } });
+    async function handleDeleteApp(id: string) {
+        await window.ipc.db.app.delete({ where: { id } });
         refetch();
     }
 
-    async function handleUpdateApp(path: string, newData: { name?: string; path?: string; }) {
+    async function handleUpdateApp(id: string, data: Prisma.AppUpdateInput) {
         await window.ipc.db.app.update({
-            where: { path },
-            data: newData
+            where: { id },
+            data
         });
         refetch();
     }
