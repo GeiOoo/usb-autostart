@@ -38,7 +38,6 @@ const handler = {
     db: {
         app: {
             create<T extends Prisma.AppCreateArgs>(options: T): Promise<Prisma.AppGetPayload<T>> {
-                console.log({ options });
                 return ipcRenderer.invoke('db-app-create', options);
             },
             findMany<T extends Prisma.AppFindManyArgs>(options?: T): Promise<Prisma.AppGetPayload<T>[]> {
