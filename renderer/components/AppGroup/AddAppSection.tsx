@@ -11,10 +11,6 @@ export default function AddAppSection({ onAddApp }: {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const handleShowSearch = () => {
-        setShowSearch(true);
-    };
-
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchText);
@@ -33,7 +29,7 @@ export default function AddAppSection({ onAddApp }: {
     if (!showSearch) {
         return <ButtonGroup>
             <Button size='small' startIcon={<Add />} variant='outlined' onClick={() => onAddApp()}>Add App</Button >
-            <Button size='small' startIcon={<Search />} variant='outlined' onClick={handleShowSearch}>processes</Button>
+            <Button size='small' startIcon={<Search />} variant='outlined' onClick={() => setShowSearch(true)}>processes</Button>
         </ButtonGroup >;
     }
 
