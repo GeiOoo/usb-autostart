@@ -2,9 +2,8 @@ import { Add, ArrowDropDown, ArrowDropUp, PlayArrow, Search, Stop } from '@mui/i
 import { Autocomplete, Button, ButtonGroup, Collapse, IconButton, Paper, Stack, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import useLocalStorageState from '../../hooks/useLocalStorageState';
 import UsbSelect from '../UsbSelect';
-import AppCard, { AppMetaData } from './AppCard/AppCard';
+import AppCard from './AppCard/AppCard';
 import AppCardIcon from './AppCard/AppCardIcon';
 
 interface Process {
@@ -15,7 +14,6 @@ interface Process {
 export default function AppGroup() {
     const [expanded, setExpanded] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
-    const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
     const [searchText, setSearchText] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -40,8 +38,14 @@ export default function AppGroup() {
         enabled: debouncedSearch.length > 0
     });
 
+    const { data, refetch } = useQuery({
+        queryFn: async () => await window.ipc.db.app.findMany(),
+        queryKey: ['appDataList'],
+        placeholderData: []
+    });
+
     const { data: appList, isPlaceholderData } = useQuery({
-        placeholderData: appDataList.map(data => ({
+        placeholderData: data.map(data => ({
             data,
             process: {
                 icon: null,
@@ -50,8 +54,8 @@ export default function AppGroup() {
         })),
         queryKey: ['appDetails'],
         queryFn: async () => {
-            const processList = await window.ipc.getAppListDetails(appDataList.map(app => app.path));
-            return await Promise.all(appDataList.map(async (data, index) => ({
+            const processList = await window.ipc.getAppListDetails(data.map(app => app.path));
+            return await Promise.all(data.map(async (data, index) => ({
                 data,
                 process: processList[index]
             })));
@@ -85,7 +89,7 @@ export default function AppGroup() {
                             onInputChange={(_event, value) => setSearchText(value)}
                             onChange={(_event, process) => {
                                 if (process) {
-                                    handleAddApp(process.path);
+                                    addApp([process.path]);
                                     setSearchText('');
                                     setShowSearch(false);
                                 }
@@ -106,7 +110,7 @@ export default function AppGroup() {
                         />
                     ) : (
                         <ButtonGroup>
-                            <Button size='small' startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
+                            <Button size='small' startIcon={<Add />} variant='outlined' onClick={() => addApp()}>Add App</Button>
                             <Button size='small' startIcon={<Search />} variant='outlined' onClick={handleShowSearch}>processes</Button>
                         </ButtonGroup>
                     )}
@@ -133,9 +137,7 @@ export default function AppGroup() {
                                     isLoading={isPlaceholderData}
                                     processData={app.process}
                                     onDeleteApp={handleDeleteApp}
-                                    onUpdateAppMetaData={(oldPath, newData) => {
-                                        setAppDataList(prev => prev.map(app => app.path === oldPath ? newData : app));
-                                    }}
+                                    onUpdateAppMetaData={handleUpdateApp}
                                 />
                             ))}
                     </Stack>
@@ -144,38 +146,39 @@ export default function AppGroup() {
         </Stack>
     );
 
-    async function handleFileSelect() {
-        const paths = await window.ipc.openFileDialog();
-        setAppDataList(prev => {
-            const newPaths = paths.filter(p => !prev.some(app => app.path === p));
-            return [...prev, ...newPaths.map(path => ({
-                name: path.split('\\').pop() || '',
-                path
-            }))];
-        });
+    async function addApp(paths?: string[]) {
+        const pathList = paths ?? await window.ipc.openFileDialog();
+
+        for (const path of pathList) {
+            await window.ipc.db.app.create({
+                data: {
+                    name: path.split('\\').pop() || '',
+                    path
+                }
+            });
+        }
+
+        refetch();
     };
 
-    function handleDeleteApp(path: string) {
-        setAppDataList(prev => prev.filter(app => app.path !== path));
+    async function handleDeleteApp(path: string) {
+        await window.ipc.db.app.delete({ where: { path } });
+        refetch();
+    }
+
+    async function handleUpdateApp(path: string, newData: { name?: string; path?: string; }) {
+        await window.ipc.db.app.update({
+            where: { path },
+            data: newData
+        });
+        refetch();
     }
 
     async function handleStartAll() {
-        await window.ipc.launchApp(appDataList.map(data => data.path));
+        await window.ipc.launchApp(data.map(data => data.path));
     }
 
     async function handleStopAll() {
-        await window.ipc.stopApp(appDataList.map(data => data.path));
-    }
-
-    function handleAddApp(path: string) {
-        setAppDataList(prev => {
-            if (prev.some(app => app.path === path)) {
-                return prev;
-            }
-            return [...prev, {
-                name: path.split('\\').pop() || '',
-                path
-            }];
-        });
+        await window.ipc.stopApp(data.map(data => data.path));
     }
 }

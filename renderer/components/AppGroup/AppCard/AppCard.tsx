@@ -2,14 +2,10 @@
 
 import { Delete, PlayArrow, Settings, Stop } from '@mui/icons-material';
 import { Button, Card, CardActions, CardHeader, Dialog, IconButton, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
+import { Prisma } from '@prisma/client';
 import Image from 'next/image';
 import { useState } from 'react';
 import AppCardSettings from './AppCardSettings';
-
-export type AppMetaData = {
-    name: string;
-    path: string;
-};
 
 export type AppLiveData = {
     icon: string;
@@ -17,11 +13,11 @@ export type AppLiveData = {
 };
 
 export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData, processData, isLoading }: {
-    data: AppMetaData;
+    data: Prisma.AppGetPayload<any>;
     processData: AppLiveData;
     isLoading: boolean;
     onDeleteApp: (path: string) => void;
-    onUpdateAppMetaData: (oldPath: string, newData: AppMetaData) => void;
+    onUpdateAppMetaData: (oldPath: string, newData: typeof data) => void;
 }) {
     const { path } = data;
 

@@ -2,6 +2,7 @@ import { exec, spawn } from 'child_process';
 import { app, dialog, ipcMain, Menu, nativeImage, Tray } from 'electron';
 import serve from 'electron-serve';
 import path from 'path';
+import prisma from '../prisma/db';
 import { AppLiveData } from '../renderer/components/AppGroup/AppCard/AppCard';
 import { createWindow } from './helpers';
 
@@ -284,4 +285,24 @@ ipcMain.handle('get-running-processes', async (_event, search: string): Promise<
         console.error('Error getting processes:', error);
         return [];
     }
+});
+
+ipcMain.handle('db-app-create', async (_event, options) => {
+    return await prisma.app.create(options);
+});
+
+ipcMain.handle('db-app-findMany', async (_event, options) => {
+    return await prisma.app.findMany(options);
+});
+
+ipcMain.handle('db-app-findUnique', async (_event, options) => {
+    return await prisma.app.findUnique(options);
+});
+
+ipcMain.handle('db-app-delete', async (_event, options) => {
+    return await prisma.app.delete(options);
+});
+
+ipcMain.handle('db-app-update', async (_event, options) => {
+    return await prisma.app.update(options);
 });

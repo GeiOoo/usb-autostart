@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 import { AppLiveData } from '../renderer/components/AppGroup/AppCard/AppCard';
 
@@ -33,6 +34,26 @@ const handler = {
         return ipcRenderer.invoke('set-autostart', enable);
     }, getRunningProcesses(search: string): Promise<{ name: string, path: string; }[]> {
         return ipcRenderer.invoke('get-running-processes', search);
+    },
+    db: {
+        app: {
+            create<T extends Prisma.AppCreateArgs>(options: T): Promise<Prisma.AppGetPayload<T>> {
+                console.log({ options });
+                return ipcRenderer.invoke('db-app-create', options);
+            },
+            findMany<T extends Prisma.AppFindManyArgs>(options?: T): Promise<Prisma.AppGetPayload<T>[]> {
+                return ipcRenderer.invoke('db-app-findMany', options);
+            },
+            findUnique<T extends Prisma.AppFindUniqueArgs>(options: T): Promise<Prisma.AppGetPayload<T> | null> {
+                return ipcRenderer.invoke('db-app-findUnique', options);
+            },
+            delete<T extends Prisma.AppDeleteArgs>(options: T) {
+                return ipcRenderer.invoke('db-app-delete', options);
+            },
+            update<T extends Prisma.AppUpdateArgs>(options: T): Promise<Prisma.AppGetPayload<T>> {
+                return ipcRenderer.invoke('db-app-update', options);
+            }
+        }
     }
 };
 
