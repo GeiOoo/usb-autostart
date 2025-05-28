@@ -1,42 +1,14 @@
-import { Add, ArrowDropDown, ArrowDropUp, PlayArrow, Search, Stop } from '@mui/icons-material';
-import { Autocomplete, Button, ButtonGroup, Collapse, IconButton, Paper, Stack, TextField } from '@mui/material';
+import { ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material';
+import { Button, Collapse, IconButton, Paper, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import UsbSelect from '../UsbSelect';
+import AddAppSection from './AddAppSection';
 import AppCard from './AppCard/AppCard';
 import AppCardIcon from './AppCard/AppCardIcon';
 
-interface Process {
-    name: string;
-    path: string;
-}
-
 export default function AppGroup() {
     const [expanded, setExpanded] = useState(false);
-    const [showSearch, setShowSearch] = useState(false);
-    const [searchText, setSearchText] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    const searchInputRef = useRef<HTMLInputElement>(null);
-
-    const handleShowSearch = () => {
-        setShowSearch(true);
-        // Focus will be handled by autoFocus prop
-    };
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchText);
-        }, 200);
-
-        return () => clearTimeout(timer);
-    }, [searchText]);
-
-    // Add query for running processes
-    const { data: runningProcesses = [], isFetching } = useQuery({
-        queryKey: ['runningProcesses', debouncedSearch],
-        queryFn: async () => debouncedSearch ? await window.ipc.getRunningProcesses(debouncedSearch) : [],
-        enabled: debouncedSearch.length > 0
-    });
 
     const { data, refetch } = useQuery({
         queryFn: async () => await window.ipc.db.app.findMany(),
@@ -77,43 +49,7 @@ export default function AppGroup() {
                     <IconButton onClick={() => setExpanded(prev => !prev)} sx={{ alignSelf: 'center' }}>
                         {expanded ? <ArrowDropUp /> : <ArrowDropDown />}
                     </IconButton>
-                    {showSearch ? (
-                        <Autocomplete
-                            size="small"
-                            sx={{ minWidth: 300 }}
-                            open={true}
-                            options={runningProcesses}
-                            loading={isFetching}
-                            value={null}
-                            getOptionLabel={(option: Process) => option.name}
-                            onInputChange={(_event, value) => setSearchText(value)}
-                            onChange={(_event, process) => {
-                                if (process) {
-                                    addApp([process.path]);
-                                    setSearchText('');
-                                    setShowSearch(false);
-                                }
-                            }}
-                            onBlur={() => {
-                                setShowSearch(false);
-                                setSearchText('');
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    inputRef={searchInputRef}
-                                    autoFocus
-                                    label="Search running processes"
-                                    placeholder="Type to search..."
-                                />
-                            )}
-                        />
-                    ) : (
-                        <ButtonGroup>
-                            <Button size='small' startIcon={<Add />} variant='outlined' onClick={() => addApp()}>Add App</Button>
-                            <Button size='small' startIcon={<Search />} variant='outlined' onClick={handleShowSearch}>processes</Button>
-                        </ButtonGroup>
-                    )}
+                    <AddAppSection onAddApp={addApp} />
                     <UsbSelect onSelectedUsbConnected={handleStartAll} onSelectedUsbDisconnected={handleStopAll} />
                     <Button size='small' startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
                     <Button size='small' startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
