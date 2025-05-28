@@ -10,7 +10,7 @@ import AppCardIcon from './AppCard/AppCardIcon';
 export default function AppGroup() {
     const [expanded, setExpanded] = useState(false);
 
-    const { data, refetch } = useQuery({
+    const { data, refetch, isPlaceholderData: basePlaceholderData } = useQuery({
         queryFn: async () => await window.ipc.db.app.findMany(),
         queryKey: ['appDataList'],
         placeholderData: []
@@ -34,6 +34,7 @@ export default function AppGroup() {
         },
         refetchOnWindowFocus: false,
         refetchInterval: 1000,
+        enabled: !basePlaceholderData
     });
 
     const sortedAppList = useMemo(() => {
