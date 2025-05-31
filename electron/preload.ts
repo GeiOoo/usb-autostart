@@ -1,13 +1,12 @@
+import { AppLiveData } from '@/src/components/AppGroup/AppCard/AppCard';
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { AppLiveData } from '../renderer/components/AppGroup/AppCard/AppCard';
 
 const handler = {
     send(channel: string, value: unknown) {
         ipcRenderer.send(channel, value);
     },
     on(channel: string, callback: (...args: unknown[]) => void) {
-        const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
-            callback(...args);
+        const subscription = (_event: IpcRendererEvent, ...args: unknown[]) => callback(...args);
         ipcRenderer.on(channel, subscription);
 
         return () => {
@@ -31,9 +30,9 @@ const handler = {
     },
     setAutoStart(enable: boolean): Promise<void> {
         return ipcRenderer.invoke('set-autostart', enable);
-    }, getRunningProcesses(search: string): Promise<{ name: string, path: string; }[]> {
+    }, getRunningProcesses(search: string): Promise<{ name: string, path: string }[]> {
         return ipcRenderer.invoke('get-running-processes', search);
-    }
+    },
 };
 
 contextBridge.exposeInMainWorld('ipc', handler);

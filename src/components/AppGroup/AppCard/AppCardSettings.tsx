@@ -4,38 +4,38 @@ import { FormEvent, useState } from 'react';
 import { AppMetaData } from './AppCard';
 
 export default function AppCardSettings({ data, closeDialog, updateAppMetaData }: {
-    data: AppMetaData;
-    closeDialog: () => void;
-    updateAppMetaData: (path: string, newData: AppMetaData) => void;
+    data: AppMetaData,
+    closeDialog: () => void,
+    updateAppMetaData: (path: string, newData: AppMetaData) => void,
 }) {
-    const [name, setName] = useState(data.name);
-    const [path, setPath] = useState(data.path);
+    const [ name, setName ] = useState(data.name);
+    const [ path, setPath ] = useState(data.path);
 
     return (
         <form onSubmit={handleSave}>
             <DialogTitle>App Settings - {data.name}</DialogTitle>
             <Stack component={DialogContent} gap={1}>
                 <TextField
-                    margin='dense'
                     label="Name"
-                    fullWidth
-                    value={name}
+                    margin="dense"
                     onChange={e => setName(e.target.value)}
+                    value={name}
+                    fullWidth
                 />
-                <Stack direction='row' gap={1} alignItems={'center'}>
+                <Stack alignItems={'center'} direction="row" gap={1}>
                     <TextField
-                        margin='dense'
                         label="Path"
-                        fullWidth
-                        value={path}
+                        margin="dense"
                         onChange={e => setName(e.target.value)}
+                        value={path}
+                        fullWidth
                     />
                     <IconButton onClick={handleSelectFile}><UploadFile /></IconButton>
                 </Stack>
             </Stack>
             <DialogActions>
-                <Button onClick={closeDialog} >Cancel</Button>
-                <Button type='submit' >Save</Button>
+                <Button onClick={closeDialog}>Cancel</Button>
+                <Button type="submit">Save</Button>
             </DialogActions>
         </form>
     );
