@@ -28,6 +28,9 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 
 let win: BrowserWindow | null;
 
+// Add isQuitting flag at the top level
+let isQuitting = false;
+
 function createWindow() {
     win = new BrowserWindow({
         icon: path.join(process.env.VITE_PUBLIC!, 'icon.ico'),
@@ -37,6 +40,20 @@ function createWindow() {
         webPreferences: {
             preload: path.join(__dirname, 'preload.mjs'),
         },
+    });
+
+    // Minimize to tray instead of closing
+    win.on('close', (event) => {
+        if (!isQuitting) {
+            event.preventDefault();
+            win?.hide();
+        }
+        return false;
+    });
+
+    // Handle minimize event
+    win.on('minimize', () => {
+        win?.hide();
     });
 
     // Test active push message to Renderer-process.
@@ -105,6 +122,7 @@ app.whenReady().then(createWindow).then(() => {
     }, {
         label: 'Quit',
         click: () => {
+            isQuitting = true;
             app.quit();
         },
     } ]);
