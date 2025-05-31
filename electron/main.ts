@@ -52,6 +52,20 @@ function createWindow() {
     }
 }
 
+const lock = app.requestSingleInstanceLock();
+if (!lock) {
+    app.quit();
+} else {
+    // If the app is already running, focus the existing window
+    app.on('second-instance', () => {
+        if (win) {
+            if (win.isMinimized()) { win.restore(); }
+            win.show();
+            win.focus();
+        }
+    });
+}
+
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
