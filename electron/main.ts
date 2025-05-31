@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu, Tray } from 'electron';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,7 +30,7 @@ let win: BrowserWindow | null;
 
 function createWindow() {
     win = new BrowserWindow({
-        icon: path.join(process.env.VITE_PUBLIC!, 'electron-vite.svg'),
+        icon: path.join(process.env.VITE_PUBLIC!, 'icon.ico'),
         width: 1400,
         height: 800,
         autoHideMenuBar: true,
@@ -91,6 +91,32 @@ app.on('activate', () => {
     }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(createWindow).then(() => {
+    const tray = new Tray(path.join(process.env.VITE_PUBLIC!, 'icon.ico'));
+    const contextMenu = Menu.buildFromTemplate([ {
+        label: 'Open App',
+        click: () => {
+            if (win) {
+                if (win.isMinimized()) { win.restore(); }
+                win.show();
+                win.focus();
+            }
+        },
+    }, {
+        label: 'Quit',
+        click: () => {
+            app.quit();
+        },
+    } ]);
+    tray.on('click', () => {
+        if (win) {
+            if (win.isMinimized()) { win.restore(); }
+            win.show();
+            win.focus();
+        }
+    });
+    tray.setToolTip('Electron App');
+    tray.setContextMenu(contextMenu);
+});
 
 registerIpcHandler(app);
