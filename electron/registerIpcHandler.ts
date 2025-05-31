@@ -1,6 +1,7 @@
 import { AppLiveData } from '@/src/components/AppGroup/AppCard/AppCard';
 import { exec, spawn } from 'child_process';
 import { dialog, ipcMain } from 'electron';
+import { APP_NAME } from './main';
 
 export default function registerIpcHandler(app: Electron.App) {
     ipcMain.handle('open-file-dialog', async (): Promise<string[]> => {
@@ -90,9 +91,6 @@ export default function registerIpcHandler(app: Electron.App) {
             return [];
         }
     });
-
-    const isProd = process.env.NODE_ENV === 'production';
-    const APP_NAME = 'USB AutoStart';
 
     // Helper function to execute PowerShell commands
     function executePsCommand(command: string): Promise<string> {

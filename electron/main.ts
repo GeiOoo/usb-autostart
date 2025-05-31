@@ -4,6 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import registerIpcHandler from './registerIpcHandler';
 
+const isProd = process.env.NODE_ENV === 'production';
+export const APP_NAME = 'USB AutoStart';
+
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,6 +33,7 @@ let win: BrowserWindow | null;
 
 // Add isQuitting flag at the top level
 let isQuitting = false;
+let tray: Tray;
 
 function createWindow() {
     win = new BrowserWindow({
@@ -44,7 +48,7 @@ function createWindow() {
 
     // Minimize to tray instead of closing
     win.on('close', (event) => {
-        if (!isQuitting) {
+        if (tray && !isQuitting) {
             event.preventDefault();
             win?.hide();
         }
@@ -109,23 +113,51 @@ app.on('activate', () => {
 });
 
 app.whenReady().then(createWindow).then(() => {
-    const tray = new Tray(path.join(process.env.VITE_PUBLIC!, 'icon.ico'));
-    const contextMenu = Menu.buildFromTemplate([ {
-        label: 'Open App',
-        click: () => {
-            if (win) {
-                if (win.isMinimized()) { win.restore(); }
-                win.show();
-                win.focus();
-            }
-        },
-    }, {
-        label: 'Quit',
-        click: () => {
-            isQuitting = true;
-            app.quit();
-        },
-    } ]);
+    if (!isProd) {
+        return;
+    }
+
+    tray = new Tray(path.join(process.env.VITE_PUBLIC!, 'icon.ico'));
+
+    // Function to update the context menu
+    const updateContextMenu = () => {
+        const startWithWindows = app.getLoginItemSettings().openAtLogin;
+        const contextMenu = Menu.buildFromTemplate([ {
+            label: 'Open App',
+            click: () => {
+                if (win) {
+                    if (win.isMinimized()) { win.restore(); }
+                    win.show();
+                    win.focus();
+                }
+            },
+        }, {
+            label: 'Start with Windows',
+            type: 'checkbox',
+            checked: startWithWindows,
+            click: () => {
+                const currentSetting = app.getLoginItemSettings().openAtLogin;
+                app.setLoginItemSettings({
+                    openAtLogin: !currentSetting,
+                    path: app.getPath('exe'),
+                });
+                updateContextMenu(); // Update the menu to reflect the new state
+            },
+        }, {
+            type: 'separator',
+        }, {
+            label: 'Quit',
+            click: () => {
+                isQuitting = true;
+                app.quit();
+            },
+        } ]);
+        tray.setContextMenu(contextMenu);
+    };
+
+    // Initialize the context menu
+    updateContextMenu();
+
     tray.on('click', () => {
         if (win) {
             if (win.isMinimized()) { win.restore(); }
@@ -134,7 +166,6 @@ app.whenReady().then(createWindow).then(() => {
         }
     });
     tray.setToolTip('Electron App');
-    tray.setContextMenu(contextMenu);
 });
 
 registerIpcHandler(app);
