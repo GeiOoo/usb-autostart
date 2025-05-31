@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import registerIpcHandler from './registerIpcHandler';
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.VITE_DEV_SERVER_URL === undefined;
 export const APP_NAME = 'USB AutoStart';
 
 const require = createRequire(import.meta.url);
