@@ -91,7 +91,7 @@ if (!gotTheLock) {
 let tray: Tray | null = null;
 let mainWindow: ReturnType<typeof createWindow>;
 
-; (async () => {
+(async () => {
     await app.whenReady();
 
     await executePsCommand('npx prisma migrate deploy');
@@ -172,7 +172,7 @@ let mainWindow: ReturnType<typeof createWindow>;
         }
     });
 
-    // Set up USB device permission handler 
+    // Set up USB device permission handler
     mainWindow.webContents.session.setDevicePermissionHandler((details) => {
         if (details.deviceType === 'usb') {
             return true; // Allow USB device access
