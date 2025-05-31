@@ -25,14 +25,14 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
     }, [ selectedUsbDevice, deviceList ]);
 
     useEffect(() => {
-        nav.usb.getDevices().then(devices => {
+        nav.usb.getDevices().then((devices: ElectronUSBDevice[]) => {
             const mappedDevices = devices.map(device => mapUsbDevice(device));
             setDeviceList(mappedDevices);
         });
 
         const signal = new AbortController();
 
-        nav.usb.addEventListener('connect', event => {
+        nav.usb.addEventListener('connect', (event: any) => {
             const newDevice = mapUsbDevice(event.device);
 
             if (isSameDevice(selectedUsbDevice, newDevice)) {
@@ -42,7 +42,7 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
             setDeviceList(prev => [ ...prev, newDevice ]);
         }, { signal: signal.signal });
 
-        nav.usb.addEventListener('disconnect', event => {
+        nav.usb.addEventListener('disconnect', (event: any) => {
             const disconnectedDevice = mapUsbDevice(event.device);
 
             if (isSameDevice(selectedUsbDevice, disconnectedDevice)) {
@@ -90,11 +90,15 @@ function mapUsbDevice(device: ElectronUSBDevice): USBDevice {
         productId: device.productId,
         productName: device.productName ? device.productName : `Unknown Device (${device.productId}:${device.vendorId})`,
         vendorId: device.vendorId,
-        manufacturerName: device.manufacturerName,
-        serialNumber: device.serialNumber,
+        manufacturerName: device.manufacturerName ?? 'Unknown Manufacturer',
+        serialNumber: device.serialNumber ?? 'Unknown Serial Number',
     };
 }
 
-function isSameDevice(device1: USBDevice, device2: USBDevice): boolean {
+function isSameDevice(device1: USBDevice | null, device2: USBDevice): boolean {
+    if (device1 === null) {
+        return false;
+    }
+
     return JSON.stringify(device1) === JSON.stringify(device2);
 }
