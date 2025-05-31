@@ -4,7 +4,7 @@
     "asar": true,
     "productName": "USB-AutoStart",
     "directories": {
-        "output": "release/${version}"
+        "output": "build"
     },
     "files": [
         "dist",
