@@ -1,8 +1,6 @@
 # USB AutoStart
 
-A desktop application built with Electron and Next.js that allows you to manage and automatically start applications when a specific USB device is connected to your computer.
-
-Based on the NextTron Repo: https://github.com/saltyshiomix/nextron
+A desktop application built with Electron and Vite that allows you to manage and automatically start applications when a specific USB device is connected to your computer.
 
 ## Features
 
@@ -49,11 +47,10 @@ The project includes automated builds through GitHub Actions, which creates:
 
 ## Tech Stack
 
-- Electron
-- Next.js
-- React
-- TypeScript
-- Material-UI (MUI)
-- React Query
-- Electron Store for persistence
-- Electron Builder for packaging
+- Electron - Desktop application framework
+- Vite - Build tool and development server
+- React - UI framework
+- TypeScript - Programming language
+- Material-UI (MUI) - React component library
+- Electron Store - Data persistence
+- Electron Builder - Application packaging
