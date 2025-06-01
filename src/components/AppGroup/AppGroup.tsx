@@ -1,17 +1,17 @@
 import { ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material';
 import { Button, Collapse, IconButton, Paper, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { db } from '../../db/db';
-import useLocalStorageState from '../../hooks/useLocalStorageState';
 import UsbSelect from '../UsbSelect';
 import AddApplications from './AddApplications/AddApplications';
-import AppCard, { AppMetaData } from './AppCard/AppCard';
+import AppCard from './AppCard/AppCard';
 import AppCardIcon from './AppCard/AppCardIcon';
 
 export default function AppGroup() {
     const [ expanded, setExpanded ] = useState(false);
-    const [ appDataList, setAppDataList ] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
+    const appDataList = useLiveQuery(() => db.app.toArray(), [], []);
 
     const { data: appList, isPlaceholderData } = useQuery({
         placeholderData: appDataList.map(data => ({
@@ -44,7 +44,7 @@ export default function AppGroup() {
                     <IconButton onClick={() => setExpanded(prev => !prev)} sx={{ alignSelf: 'center' }}>
                         {expanded ? <ArrowDropUp /> : <ArrowDropDown />}
                     </IconButton>
-                    <AddApplications onAddApps={handleAddApp} />
+                    <AddApplications />
                     <UsbSelect onSelectedUsbConnected={handleStartAll} onSelectedUsbDisconnected={handleStopAll} />
                     <Button
                         color="primary"
@@ -86,11 +86,7 @@ export default function AppGroup() {
                                     key={app.data.path}
                                     data={app.data}
                                     isLoading={isPlaceholderData}
-                                    onDeleteApp={handleDeleteApp}
                                     processData={app.process}
-                                    onUpdateAppMetaData={(oldPath, newData) => {
-                                        setAppDataList(prev => prev.map(app => app.path === oldPath ? newData : app));
-                                    }}
                                 />
                             ))}
                     </Stack>
@@ -99,28 +95,11 @@ export default function AppGroup() {
         </Stack>
     );
 
-    function handleDeleteApp(path: string) {
-        setAppDataList(prev => prev.filter(app => app.path !== path));
-    }
-
     async function handleStartAll() {
         await window.ipc.launchApp(appDataList.map(data => data.path));
     }
 
     async function handleStopAll() {
         await window.ipc.stopApp(appDataList.map(data => data.path));
-    }
-
-    async function handleAddApp(paths?: string[]) {
-        const pathList = paths ?? await window.ipc.openFileDialog();
-        const appList = pathList
-            .filter(path => path && !appDataList.some(app => app.path === path))
-            .map(path => ({
-                name: path.split('\\').pop() || '',
-                path,
-            }));
-
-        setAppDataList(prev => ([ ...prev, ...appList ]));
-        await db.app.bulkAdd(appList);
     }
 }

@@ -1,12 +1,11 @@
+import { App, db } from '@/src/db/db';
 import { UploadFile } from '@mui/icons-material';
 import { Button, DialogActions, DialogContent, DialogTitle, IconButton, Stack, TextField } from '@mui/material';
 import { FormEvent, useState } from 'react';
-import { AppMetaData } from './AppCard';
 
-export default function AppCardSettings({ data, closeDialog, updateAppMetaData }: {
-    data: AppMetaData,
+export default function AppCardSettings({ data, closeDialog }: {
+    data: App,
     closeDialog: () => void,
-    updateAppMetaData: (path: string, newData: AppMetaData) => void,
 }) {
     const [ name, setName ] = useState(data.name);
     const [ path, setPath ] = useState(data.path);
@@ -50,9 +49,9 @@ export default function AppCardSettings({ data, closeDialog, updateAppMetaData }
         }
     }
 
-    function handleSave(event: FormEvent<HTMLFormElement>) {
+    async function handleSave(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        updateAppMetaData(data.path, { name, path });
+        await db.app.update(data.id, { name, path });
         closeDialog();
     }
 }

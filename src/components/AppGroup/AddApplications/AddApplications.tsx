@@ -1,13 +1,10 @@
+import { db } from '@/src/db/db';
 import { Add, Search } from '@mui/icons-material';
 import { Autocomplete, Button, ButtonGroup, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 
-interface AddApplicationsProps {
-    onAddApps: (paths?: string[]) => void,
-}
-
-export default function AddApplications({ onAddApps }: AddApplicationsProps) {
+export default function AddApplications() {
     const [ showSearch, setShowSearch ] = useState(false);
     const [ searchText, setSearchText ] = useState('');
     const [ debouncedSearch, setDebouncedSearch ] = useState('');
@@ -80,4 +77,18 @@ export default function AddApplications({ onAddApps }: AddApplicationsProps) {
             </Button>
         </ButtonGroup>
     );
+
+    async function onAddApps(paths?: string[]) {
+        const pathList = paths ?? await window.ipc.openFileDialog();
+
+        const currentApps = await db.app.toArray();
+        const appList = pathList
+            .filter(path => path && !currentApps.some(app => app.path === path))
+            .map(path => ({
+                name: path.split('\\').pop() || '',
+                path,
+            }));
+
+        await db.app.bulkAdd(appList);
+    }
 }

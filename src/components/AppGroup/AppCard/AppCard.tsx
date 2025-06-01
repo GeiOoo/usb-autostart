@@ -1,5 +1,4 @@
-'use client';
-
+import { App, db } from '@/src/db/db';
 import { Delete, PlayArrow, Settings, Stop } from '@mui/icons-material';
 import { Button, Card, CardActions, CardHeader, Dialog, IconButton, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
@@ -10,17 +9,10 @@ export type AppLiveData = {
     isRunning: boolean,
 };
 
-export type AppMetaData = {
-    name: string,
-    path: string,
-};
-
-export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData, processData, isLoading }: {
-    data: AppMetaData,
+export default function AppCard({ data, processData, isLoading }: {
+    data: App,
     processData: AppLiveData,
     isLoading: boolean,
-    onDeleteApp: (path: string) => void,
-    onUpdateAppMetaData: (oldPath: string, newData: AppMetaData) => void,
 }) {
     const { path } = data;
 
@@ -77,14 +69,13 @@ export default function AppCard({ data, onDeleteApp, onUpdateAppMetaData, proces
                     <AppCardSettings
                         closeDialog={() => setShowSettingsDialog(false)}
                         data={data}
-                        updateAppMetaData={onUpdateAppMetaData}
                     />
                 </Dialog>
             </CardActions>
         </Stack>
     );
 
-    function handleDelete() {
-        onDeleteApp(path);
+    async function handleDelete() {
+        await db.app.delete(data.id);
     }
 }
