@@ -17,6 +17,9 @@ const handler = {
         return ipcRenderer.invoke('open-file-dialog');
     },
     getAppListDetails(paths: string[]): Promise<AppLiveData[]> {
+        return ipcRenderer.invoke('get-app-list-details', paths);
+    },
+    getAppDetails(paths: string): Promise<AppLiveData> {
         return ipcRenderer.invoke('get-app-details', paths);
     },
     launchApp(path: string[]): Promise<void> {
@@ -30,7 +33,8 @@ const handler = {
     },
     setAutoStart(enable: boolean): Promise<void> {
         return ipcRenderer.invoke('set-autostart', enable);
-    }, getRunningProcesses(search: string): Promise<{ name: string, path: string }[]> {
+    },
+    getRunningProcesses(search: string): Promise<{ name: string, path: string }[]> {
         return ipcRenderer.invoke('get-running-processes', search);
     },
 };

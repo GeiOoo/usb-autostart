@@ -1,40 +1,18 @@
 import { ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material';
-import { Button, Collapse, IconButton, Paper, Stack } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { Button, IconButton, Paper, Stack } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { db } from '../../db/db';
 import UsbSelect from '../UsbSelect';
 import AddApplications from './AddApplications/AddApplications';
 import AppCard from './AppCard/AppCard';
-import AppCardIcon from './AppCard/AppCardIcon';
 
 export default function AppGroup() {
     const [ expanded, setExpanded ] = useState(false);
-    const appDataList = useLiveQuery(() => db.app.toArray(), [], []);
-
-    const { data: appList, isPlaceholderData } = useQuery({
-        placeholderData: appDataList.map(data => ({
-            data,
-            process: {
-                icon: '',
-                isRunning: false,
-            },
-        })),
-        queryKey: [ 'appDetails' ],
-        queryFn: async () => {
-            const processList = await window.ipc.getAppListDetails(appDataList.map(app => app.path));
-            return appDataList.map((data, index) => ({
-                data,
-                process: processList[index],
-            }));
-        },
-        refetchOnWindowFocus: false,
-        refetchInterval: 1000,
-    });
+    const appList = useLiveQuery(() => db.app.toArray(), [], []);
 
     const sortedAppList = useMemo(() => {
-        return appList?.sort((a, b) => a.data.name.localeCompare(b.data.name)) ?? [];
+        return appList?.sort((a, b) => a.name.localeCompare(b.name)) ?? [];
     }, [ appList ]);
 
     return (
@@ -63,43 +41,28 @@ export default function AppGroup() {
                     >Stop All
                     </Button>
                 </Stack>
-                <Collapse in={!expanded}>
-                    <Stack direction={'row'} flexWrap="wrap" gap={1}>
-                        {sortedAppList.map(app => (
-                            <AppCardIcon key={app.data.name} isLoading={isPlaceholderData} processData={app.process} />
-                        ))}
-                    </Stack>
-                </Collapse>
             </Stack>
-            <Stack p={2}>
-                <Collapse in={expanded}>
-                    <Stack
-                        alignItems={'baseline'}
-                        direction={'row'}
-                        flexWrap="wrap"
-                        gap={2}
-                        overflow={'auto'}
-                    >
-                        {sortedAppList
-                            .map(app => (
-                                <AppCard
-                                    key={app.data.path}
-                                    data={app.data}
-                                    isLoading={isPlaceholderData}
-                                    processData={app.process}
-                                />
-                            ))}
-                    </Stack>
-                </Collapse>
+            <Stack
+                alignItems={'baseline'}
+                direction={'row'}
+                flexWrap="wrap"
+                gap={2}
+                overflow={'auto'}
+                p={2}
+            >
+                {sortedAppList
+                    .map(app => (
+                        <AppCard key={app.path} data={app} />
+                    ))}
             </Stack>
         </Stack>
     );
 
     async function handleStartAll() {
-        await window.ipc.launchApp(appDataList.map(data => data.path));
+        await window.ipc.launchApp(appList.map(data => data.path));
     }
 
     async function handleStopAll() {
-        await window.ipc.stopApp(appDataList.map(data => data.path));
+        await window.ipc.stopApp(appList.map(data => data.path));
     }
 }

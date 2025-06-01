@@ -12,7 +12,7 @@ export default function registerIpcHandler(app: Electron.App) {
         return result?.filePaths ?? [];
     });
 
-    ipcMain.handle('get-app-details', async (_event, paths: string[]): Promise<AppLiveData[]> => {
+    ipcMain.handle('get-app-list-details', async (_event, paths: string[]): Promise<AppLiveData[]> => {
         const processInfos = getProcessInfoFromPaths(paths);
         const runningProcesses = await getRunningProcesses(processInfos.map(info => info.processName));
 
@@ -22,6 +22,16 @@ export default function registerIpcHandler(app: Electron.App) {
                 isRunning: runningProcesses.has(processName),
             }))
         );
+    });
+
+    ipcMain.handle('get-app-details', async (_event, path: string): Promise<AppLiveData> => {
+        const processInfos = getProcessInfoFromPaths(path);
+        const runningProcesses = await getRunningProcesses(processInfos.map(info => info.processName));
+
+        return {
+            icon: (await app.getFileIcon(path, { size: 'large' })).toDataURL(),
+            isRunning: runningProcesses.has(processInfos[0].processName),
+        };
     });
 
     ipcMain.handle('launch-app', async (_event, paths: string[] | string) => {

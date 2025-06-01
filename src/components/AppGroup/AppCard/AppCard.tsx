@@ -1,6 +1,7 @@
 import { App, db } from '@/src/db/db';
 import { Delete, PlayArrow, Settings, Stop } from '@mui/icons-material';
 import { Button, Card, CardActions, CardHeader, Dialog, IconButton, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import AppCardSettings from './AppCardSettings';
 
@@ -9,16 +10,23 @@ export type AppLiveData = {
     isRunning: boolean,
 };
 
-export default function AppCard({ data, processData, isLoading }: {
+export default function AppCard({ data }: {
     data: App,
-    processData: AppLiveData,
-    isLoading: boolean,
 }) {
     const { path } = data;
 
     const [ showSettingsDialog, setShowSettingsDialog ] = useState(false);
 
     const nameSkeletonLengthInPixel = path.split('\\').pop()!.length * 8 || 0;
+
+    const { data: live } = useQuery({
+        queryKey: [ 'appDetails', path ],
+        queryFn: async () => await window.ipc.getAppDetails(path),
+        refetchOnWindowFocus: false,
+        refetchInterval: 1000,
+    });
+
+    console.log(live?.isRunning);
 
     return (
         <Stack
@@ -27,34 +35,33 @@ export default function AppCard({ data, processData, isLoading }: {
             flex={1}
             maxWidth={400}
             minWidth={250}
-            raised={processData?.isRunning}
+            raised={live?.isRunning}
         >
             <CardHeader
                 action={<IconButton color="error" onClick={handleDelete} size="small"><Delete /></IconButton>}
-                avatar={isLoading ? <Skeleton height={32} variant="circular" width={32} /> : (
-                    <img
-                        alt="icon"
-                        height={32}
-                        src={processData.icon}
-                        width={32}
-                    />
-                )}
+                avatar={
+                    !live ? <Skeleton height={32} variant="circular" width={32} /> : (
+                        <img
+                            alt="icon"
+                            height={32}
+                            src={live.icon}
+                            width={32}
+                        />
+                    )
+                }
                 title={
-                    isLoading ?
-                        <Skeleton height={28} width={nameSkeletonLengthInPixel} />
-                        :
-                        (
-                            <Tooltip placement="top" title={path} arrow>
-                                <Typography color={processData.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>
-                            </Tooltip>
-                        )
+                    !live ? <Skeleton height={28} width={nameSkeletonLengthInPixel} /> : (
+                        <Tooltip placement="top" title={path} arrow>
+                            <Typography color={live.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>
+                        </Tooltip>
+                    )
                 }
             />
             <CardActions sx={{ pt: 0 }}>
                 <Button
                     variant="outlined"
                     fullWidth
-                    {...processData?.isRunning ? {
+                    {...live?.isRunning ? {
                         children: 'Stop',
                         startIcon: <Stop />,
                         onClick: () => window.ipc.stopApp([ path ]),
