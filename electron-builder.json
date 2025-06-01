@@ -29,8 +29,7 @@
         "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
     },
     "nsis": {
-        "oneClick": false,
-        "perMachine": false,
+        "oneClick": true,
         "allowToChangeInstallationDirectory": true,
         "deleteAppDataOnUninstall": false
     },
