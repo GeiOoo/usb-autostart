@@ -1,14 +1,15 @@
+import useLocalStorageState from '@/src/hooks/useLocalStorageState';
 import { ArrowDropDown, ArrowDropUp, PlayArrow, Stop } from '@mui/icons-material';
 import { Button, IconButton, Paper, Stack } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { db } from '../../db/db';
 import UsbSelect from '../UsbSelect';
 import AddApplications from './AddApplications/AddApplications';
 import AppCard from './AppCard/AppCard';
 
 export default function AppGroup() {
-    const [ expanded, setExpanded ] = useState(false);
+    const [ expanded, setExpanded ] = useLocalStorageState(false, 'appGroupExpanded');
     const appList = useLiveQuery(() => db.app.toArray(), [], []);
 
     const sortedAppList = useMemo(() => {
@@ -52,7 +53,7 @@ export default function AppGroup() {
             >
                 {sortedAppList
                     .map(app => (
-                        <AppCard key={app.path} data={app} />
+                        <AppCard key={app.path} data={app} extendedView={expanded} />
                     ))}
             </Stack>
         </Stack>

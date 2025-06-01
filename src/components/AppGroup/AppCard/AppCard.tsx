@@ -3,6 +3,7 @@ import { Delete, PlayArrow, Settings, Stop } from '@mui/icons-material';
 import { Button, Card, CardActions, CardHeader, Dialog, IconButton, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import AppCardIcon from './AppCardIcon';
 import AppCardSettings from './AppCardSettings';
 
 export type AppLiveData = {
@@ -10,8 +11,9 @@ export type AppLiveData = {
     isRunning: boolean,
 };
 
-export default function AppCard({ data }: {
+export default function AppCard({ data, extendedView }: {
     data: App,
+    extendedView: boolean,
 }) {
     const { path } = data;
 
@@ -26,7 +28,9 @@ export default function AppCard({ data }: {
         refetchInterval: 1000,
     });
 
-    console.log(live?.isRunning);
+    if (!extendedView) {
+        return <AppCardIcon processData={live} />;
+    }
 
     return (
         <Stack
