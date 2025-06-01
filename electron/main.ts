@@ -37,7 +37,7 @@ let tray: Tray;
 
 function createWindow() {
     win = new BrowserWindow({
-        icon: path.join(process.env.VITE_PUBLIC!, 'logo.png'),
+        icon: path.join(process.env.VITE_PUBLIC!, 'favicon.ico'),
         width: 1400,
         height: 800,
         autoHideMenuBar: true,
@@ -117,7 +117,7 @@ app.whenReady().then(createWindow).then(() => {
         return;
     }
 
-    tray = new Tray(path.join(process.env.VITE_PUBLIC!, 'logo.png'));
+    tray = new Tray(path.join(process.env.VITE_PUBLIC!, 'favicon.ico'));
 
     // Function to update the context menu
     const updateContextMenu = () => {
