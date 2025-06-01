@@ -1,5 +1,3 @@
-'use client';
-
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PropsWithChildren } from 'react';
@@ -11,20 +9,20 @@ const theme = createTheme({
     components: {
         MuiSelect: {
             defaultProps: {
-                size: 'small'
-            }
+                size: 'small',
+            },
         },
         MuiButton: {
             defaultProps: {
                 size: 'small',
-            }
+            },
         },
         MuiIconButton: {
             defaultProps: {
                 size: 'small',
-            }
-        }
-    }
+            },
+        },
+    },
 });
 
 const queryClient = new QueryClient();

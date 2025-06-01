@@ -25,13 +25,11 @@
                 ]
             }
         ],
-        "icon": "build/icons/favicon.ico",
+        "icon": "public/favicon.ico",
         "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
     },
     "nsis": {
-        "oneClick": false,
-        "perMachine": false,
-        "allowToChangeInstallationDirectory": true,
+        "oneClick": true,
         "deleteAppDataOnUninstall": false
     },
     "linux": {

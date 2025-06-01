@@ -1,4 +1,3 @@
-import { AppLiveData } from '@/src/components/AppGroup/AppCard/AppCard';
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
 const handler = {
@@ -16,8 +15,11 @@ const handler = {
     openFileDialog(): Promise<string[]> {
         return ipcRenderer.invoke('open-file-dialog');
     },
-    getAppListDetails(paths: string[]): Promise<AppLiveData[]> {
-        return ipcRenderer.invoke('get-app-details', paths);
+    getAppIcon(path: string): Promise<string> {
+        return ipcRenderer.invoke('get-app-icon', path);
+    },
+    isAppRunning(path: string): Promise<boolean> {
+        return ipcRenderer.invoke('is-app-running', path);
     },
     launchApp(path: string[]): Promise<void> {
         return ipcRenderer.invoke('launch-app', path);
@@ -30,7 +32,8 @@ const handler = {
     },
     setAutoStart(enable: boolean): Promise<void> {
         return ipcRenderer.invoke('set-autostart', enable);
-    }, getRunningProcesses(search: string): Promise<{ name: string, path: string }[]> {
+    },
+    getRunningProcesses(search: string): Promise<{ name: string, path: string }[]> {
         return ipcRenderer.invoke('get-running-processes', search);
     },
 };

@@ -10,7 +10,7 @@ export default function useLocalStorageState<T>(defaultValue: T, localStorageKey
             storageValue = storeData;
         }
     }
-    const [state, setState] = useState<T>(storageValue === undefined ? defaultValue : storageValue);
+    const [ state, setState ] = useState<T>(storageValue === undefined ? defaultValue : storageValue);
 
     useEffect(() => {
         if (state === undefined) {
@@ -18,7 +18,7 @@ export default function useLocalStorageState<T>(defaultValue: T, localStorageKey
         } else {
             localStorage.setItem(localStorageKey, JSON.stringify(state));
         }
-    }, [state]);
+    }, [ state ]);
 
-    return [state, setState];
+    return [ state, setState ];
 }
