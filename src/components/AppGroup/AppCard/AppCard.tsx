@@ -16,20 +16,25 @@ export default function AppCard({ data, extendedView }: {
     extendedView: boolean,
 }) {
     const { path } = data;
-
     const [ showSettingsDialog, setShowSettingsDialog ] = useState(false);
-
     const nameSkeletonLengthInPixel = path.split('\\').pop()!.length * 8 || 0;
 
-    const { data: live } = useQuery({
-        queryKey: [ 'appDetails', path ],
-        queryFn: async () => await window.ipc.getAppDetails(path),
+    const { data: icon = '' } = useQuery({
+        queryKey: [ 'appIcon', path ],
+        queryFn: async () => await window.ipc.getAppIcon(path),
         refetchOnWindowFocus: false,
+    });
+
+    const { data: isRunning = false } = useQuery({
+        queryKey: [ 'appRunning', path ],
+        queryFn: async () => await window.ipc.isAppRunning(path),
+        refetchOnWindowFocus: false,
+        // Check running state more frequently
         refetchInterval: 1000,
     });
 
     if (!extendedView) {
-        return <AppCardIcon processData={live} />;
+        return <AppCardIcon processData={{ icon, isRunning }} />;
     }
 
     return (
@@ -39,24 +44,24 @@ export default function AppCard({ data, extendedView }: {
             flex={1}
             maxWidth={400}
             minWidth={250}
-            raised={live?.isRunning}
+            raised={isRunning}
         >
             <CardHeader
                 action={<IconButton color="error" onClick={handleDelete} size="small"><Delete /></IconButton>}
                 avatar={
-                    !live ? <Skeleton height={32} variant="circular" width={32} /> : (
+                    !icon ? <Skeleton height={32} variant="circular" width={32} /> : (
                         <img
                             alt="icon"
                             height={32}
-                            src={live.icon}
+                            src={icon}
                             width={32}
                         />
                     )
                 }
                 title={
-                    !live ? <Skeleton height={28} width={nameSkeletonLengthInPixel} /> : (
+                    !icon ? <Skeleton height={28} width={nameSkeletonLengthInPixel} /> : (
                         <Tooltip placement="top" title={path} arrow>
-                            <Typography color={live.isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>
+                            <Typography color={isRunning ? 'primary' : 'textPrimary'}>{data.name}</Typography>
                         </Tooltip>
                     )
                 }
@@ -65,7 +70,7 @@ export default function AppCard({ data, extendedView }: {
                 <Button
                     variant="outlined"
                     fullWidth
-                    {...live?.isRunning ? {
+                    {...isRunning ? {
                         children: 'Stop',
                         startIcon: <Stop />,
                         onClick: () => window.ipc.stopApp([ path ]),

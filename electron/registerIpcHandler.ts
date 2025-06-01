@@ -1,4 +1,3 @@
-import { AppLiveData } from '@/src/components/AppGroup/AppCard/AppCard';
 import { exec, spawn } from 'child_process';
 import { dialog, ipcMain } from 'electron';
 import { APP_NAME } from './main';
@@ -12,26 +11,14 @@ export default function registerIpcHandler(app: Electron.App) {
         return result?.filePaths ?? [];
     });
 
-    ipcMain.handle('get-app-list-details', async (_event, paths: string[]): Promise<AppLiveData[]> => {
-        const processInfos = getProcessInfoFromPaths(paths);
-        const runningProcesses = await getRunningProcesses(processInfos.map(info => info.processName));
-
-        return Promise.all(
-            processInfos.map(async ({ path, processName }) => ({
-                icon: (await app.getFileIcon(path, { size: 'large' })).toDataURL(),
-                isRunning: runningProcesses.has(processName),
-            }))
-        );
+    ipcMain.handle('get-app-icon', async (_event, path: string): Promise<string> => {
+        return (await app.getFileIcon(path, { size: 'large' })).toDataURL();
     });
 
-    ipcMain.handle('get-app-details', async (_event, path: string): Promise<AppLiveData> => {
-        const processInfos = getProcessInfoFromPaths(path);
-        const runningProcesses = await getRunningProcesses(processInfos.map(info => info.processName));
-
-        return {
-            icon: (await app.getFileIcon(path, { size: 'large' })).toDataURL(),
-            isRunning: runningProcesses.has(processInfos[0].processName),
-        };
+    ipcMain.handle('is-app-running', async (_event, path: string): Promise<boolean> => {
+        const [ processInfo ] = getProcessInfoFromPaths(path);
+        const runningProcesses = await getRunningProcesses([ processInfo.processName ]);
+        return runningProcesses.has(processInfo.processName);
     });
 
     ipcMain.handle('launch-app', async (_event, paths: string[] | string) => {
