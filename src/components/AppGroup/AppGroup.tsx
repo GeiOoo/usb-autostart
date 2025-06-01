@@ -8,16 +8,16 @@ import AppCard, { AppMetaData } from './AppCard/AppCard';
 import AppCardIcon from './AppCard/AppCardIcon';
 
 interface Process {
-    name: string;
-    path: string;
+    name: string,
+    path: string,
 }
 
 export default function AppGroup() {
-    const [expanded, setExpanded] = useState(false);
-    const [showSearch, setShowSearch] = useState(false);
-    const [appDataList, setAppDataList] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
-    const [searchText, setSearchText] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [ expanded, setExpanded ] = useState(false);
+    const [ showSearch, setShowSearch ] = useState(false);
+    const [ appDataList, setAppDataList ] = useLocalStorageState<AppMetaData[]>([], 'appDataList');
+    const [ searchText, setSearchText ] = useState('');
+    const [ debouncedSearch, setDebouncedSearch ] = useState('');
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const handleShowSearch = () => {
@@ -31,58 +31,60 @@ export default function AppGroup() {
         }, 200);
 
         return () => clearTimeout(timer);
-    }, [searchText]);
+    }, [ searchText ]);
 
     // Add query for running processes
     const { data: runningProcesses = [], isFetching } = useQuery({
-        queryKey: ['runningProcesses', debouncedSearch],
+        queryKey: [ 'runningProcesses', debouncedSearch ],
         queryFn: async () => debouncedSearch ? await window.ipc.getRunningProcesses(debouncedSearch) : [],
-        enabled: debouncedSearch.length > 0
+        enabled: debouncedSearch.length > 0,
     });
 
     const { data: appList, isPlaceholderData } = useQuery({
         placeholderData: appDataList.map(data => ({
             data,
             process: {
-                icon: null,
-                isRunning: false
-            }
+                icon: '',
+                isRunning: false,
+            },
         })),
-        queryKey: ['appDetails'],
+        queryKey: [ 'appDetails' ],
         queryFn: async () => {
             const processList = await window.ipc.getAppListDetails(appDataList.map(app => app.path));
-            return await Promise.all(appDataList.map(async (data, index) => ({
+            return appDataList.map((data, index) => ({
                 data,
-                process: processList[index]
-            })));
+                process: processList[index],
+            }));
         },
         refetchOnWindowFocus: false,
         refetchInterval: 1000,
     });
 
     const sortedAppList = useMemo(() => {
-        return appList
-            .toSorted((a, b) => a.data.name.localeCompare(b.data.name));
-    }, [appList]);
-
+        return appList?.sort((a, b) => a.data.name.localeCompare(b.data.name)) ?? [];
+    }, [ appList ]);
 
     return (
-        <Stack height={'100vh'} >
-            <Stack component={Paper} padding={2} gap={2}>
-                <Stack direction="row" gap={2} alignItems={'center'}>
+        <Stack height={'100vh'}>
+            <Stack component={Paper} gap={2} padding={2}>
+                <Stack alignItems={'center'} direction="row" gap={2}>
                     <IconButton onClick={() => setExpanded(prev => !prev)} sx={{ alignSelf: 'center' }}>
                         {expanded ? <ArrowDropUp /> : <ArrowDropDown />}
                     </IconButton>
                     {showSearch ? (
                         <Autocomplete
-                            size="small"
-                            sx={{ minWidth: 300 }}
+                            getOptionLabel={(option: Process) => option.name}
+                            loading={isFetching}
+                            onInputChange={(_event, value) => setSearchText(value)}
                             open={true}
                             options={runningProcesses}
-                            loading={isFetching}
+                            size="small"
+                            sx={{ minWidth: 300 }}
                             value={null}
-                            getOptionLabel={(option: Process) => option.name}
-                            onInputChange={(_event, value) => setSearchText(value)}
+                            onBlur={() => {
+                                setShowSearch(false);
+                                setSearchText('');
+                            }}
                             onChange={(_event, process) => {
                                 if (process) {
                                     handleAddApp(process.path);
@@ -90,49 +92,77 @@ export default function AppGroup() {
                                     setShowSearch(false);
                                 }
                             }}
-                            onBlur={() => {
-                                setShowSearch(false);
-                                setSearchText('');
-                            }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
                                     inputRef={searchInputRef}
-                                    autoFocus
                                     label="Search running processes"
                                     placeholder="Type to search..."
+                                    autoFocus
                                 />
                             )}
                         />
                     ) : (
                         <ButtonGroup>
-                            <Button size='small' startIcon={<Add />} variant='outlined' onClick={handleFileSelect}>Add App</Button>
-                            <Button size='small' startIcon={<Search />} variant='outlined' onClick={handleShowSearch}>processes</Button>
+                            <Button
+                                onClick={handleFileSelect}
+                                size="small"
+                                startIcon={<Add />}
+                                variant="outlined"
+                            >Add App
+                            </Button>
+                            <Button
+                                onClick={handleShowSearch}
+                                size="small"
+                                startIcon={<Search />}
+                                variant="outlined"
+                            >processes
+                            </Button>
                         </ButtonGroup>
                     )}
                     <UsbSelect onSelectedUsbConnected={handleStartAll} onSelectedUsbDisconnected={handleStopAll} />
-                    <Button size='small' startIcon={<PlayArrow />} variant='outlined' color="primary" onClick={handleStartAll}>Start All</Button>
-                    <Button size='small' startIcon={<Stop />} variant='outlined' color="error" onClick={handleStopAll}>Stop All</Button>
+                    <Button
+                        color="primary"
+                        onClick={handleStartAll}
+                        size="small"
+                        startIcon={<PlayArrow />}
+                        variant="outlined"
+                    >Start All
+                    </Button>
+                    <Button
+                        color="error"
+                        onClick={handleStopAll}
+                        size="small"
+                        startIcon={<Stop />}
+                        variant="outlined"
+                    >Stop All
+                    </Button>
                 </Stack>
                 <Collapse in={!expanded}>
-                    <Stack direction={'row'} gap={1} flexWrap="wrap">
+                    <Stack direction={'row'} flexWrap="wrap" gap={1}>
                         {sortedAppList.map(app => (
-                            <AppCardIcon isLoading={isPlaceholderData} processData={app.process} key={app.data.name} />
+                            <AppCardIcon key={app.data.name} isLoading={isPlaceholderData} processData={app.process} />
                         ))}
                     </Stack>
                 </Collapse>
             </Stack>
             <Stack p={2}>
-                <Collapse in={expanded} >
-                    <Stack overflow={'auto'} direction={'row'} gap={2} flexWrap="wrap" alignItems={'baseline'}>
+                <Collapse in={expanded}>
+                    <Stack
+                        alignItems={'baseline'}
+                        direction={'row'}
+                        flexWrap="wrap"
+                        gap={2}
+                        overflow={'auto'}
+                    >
                         {sortedAppList
                             .map(app => (
                                 <AppCard
                                     key={app.data.path}
                                     data={app.data}
                                     isLoading={isPlaceholderData}
-                                    processData={app.process}
                                     onDeleteApp={handleDeleteApp}
+                                    processData={app.process}
                                     onUpdateAppMetaData={(oldPath, newData) => {
                                         setAppDataList(prev => prev.map(app => app.path === oldPath ? newData : app));
                                     }}
@@ -148,12 +178,12 @@ export default function AppGroup() {
         const paths = await window.ipc.openFileDialog();
         setAppDataList(prev => {
             const newPaths = paths.filter(p => !prev.some(app => app.path === p));
-            return [...prev, ...newPaths.map(path => ({
+            return [ ...prev, ...newPaths.map(path => ({
                 name: path.split('\\').pop() || '',
-                path
-            }))];
+                path,
+            })) ];
         });
-    };
+    }
 
     function handleDeleteApp(path: string) {
         setAppDataList(prev => prev.filter(app => app.path !== path));
@@ -172,10 +202,10 @@ export default function AppGroup() {
             if (prev.some(app => app.path === path)) {
                 return prev;
             }
-            return [...prev, {
+            return [ ...prev, {
                 name: path.split('\\').pop() || '',
-                path
-            }];
+                path,
+            } ];
         });
     }
 }

@@ -12,14 +12,11 @@ jobs:
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
       - run: npm install
-      - run: npx release-it --config release-it/version-bump.json --ci
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run build
       - name: Create portable ZIP
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
           Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/USB AutoStart ${version} Portable.zip"
-      - run: npx release-it --config release-it/create-release.json --ci
+      - run: npx release-it
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
