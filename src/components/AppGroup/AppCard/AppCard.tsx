@@ -6,11 +6,6 @@ import { useState } from 'react';
 import AppCardIcon from './AppCardIcon';
 import AppCardSettings from './AppCardSettings';
 
-export type AppLiveData = {
-    icon: string,
-    isRunning: boolean,
-};
-
 export default function AppCard({ data, extendedView }: {
     data: App,
     extendedView: boolean,
@@ -19,7 +14,7 @@ export default function AppCard({ data, extendedView }: {
     const [ showSettingsDialog, setShowSettingsDialog ] = useState(false);
     const nameSkeletonLengthInPixel = path.split('\\').pop()!.length * 8 || 0;
 
-    const { data: icon = '' } = useQuery({
+    const { data: icon } = useQuery({
         queryKey: [ 'appIcon', path ],
         queryFn: async () => await window.ipc.getAppIcon(path),
         refetchOnWindowFocus: false,
@@ -34,7 +29,7 @@ export default function AppCard({ data, extendedView }: {
     });
 
     if (!extendedView) {
-        return <AppCardIcon processData={{ icon, isRunning }} />;
+        return <AppCardIcon icon={icon} isRunning={isRunning} />;
     }
 
     return (
