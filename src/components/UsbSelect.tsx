@@ -55,7 +55,7 @@ export default function UsbSelect({ onSelectedUsbConnected, onSelectedUsbDisconn
         return () => {
             signal.abort();
         };
-    }, []);
+    }, [ onSelectedUsbConnected, onSelectedUsbDisconnected, selectedUsbDevice ]);
 
     return (
         <Stack
