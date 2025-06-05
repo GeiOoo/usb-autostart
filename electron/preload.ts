@@ -36,6 +36,12 @@ const handler = {
     getRunningProcesses(search: string): Promise<{ name: string, path: string }[]> {
         return ipcRenderer.invoke('get-running-processes', search);
     },
+    setUsbActive() {
+        ipcRenderer.invoke('set-usb-active');
+    },
+    setUsbInactive() {
+        ipcRenderer.invoke('set-usb-inactive');
+    },
 };
 
 contextBridge.exposeInMainWorld('ipc', handler);

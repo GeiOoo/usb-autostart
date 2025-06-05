@@ -1,8 +1,19 @@
 import { exec, spawn } from 'child_process';
 import { dialog, ipcMain } from 'electron';
+import path from 'path';
 import { APP_NAME } from './main';
 
-export default function registerIpcHandler(app: Electron.App) {
+export default function registerIpcHandler(app: Electron.App, win: Electron.BrowserWindow | null, tray: Electron.Tray | null) {
+    ipcMain.handle('set-usb-active', () => {
+        tray?.setImage(path.join(process.env.VITE_PUBLIC!, 'favicon_active.ico'));
+        win?.setIcon(path.join(process.env.VITE_PUBLIC!, 'favicon_active.ico'));
+    }),
+
+    ipcMain.handle('set-usb-inactive', () => {
+        tray?.setImage(path.join(process.env.VITE_PUBLIC!, 'favicon.ico'));
+        win?.setIcon(path.join(process.env.VITE_PUBLIC!, 'favicon.ico'));
+    });
+
     ipcMain.handle('open-file-dialog', async (): Promise<string[]> => {
         const result = await dialog.showOpenDialog({
             properties: [ 'openFile', 'multiSelections' ],

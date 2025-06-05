@@ -60,10 +60,12 @@ export default function AppGroup() {
     );
 
     async function handleStartAll() {
+        window.ipc.setUsbActive();
         await window.ipc.launchApp(appList.map(data => data.path));
     }
 
     async function handleStopAll() {
+        window.ipc.setUsbInactive();
         await window.ipc.stopApp(appList.map(data => data.path));
     }
 }
