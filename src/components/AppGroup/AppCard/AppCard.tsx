@@ -16,13 +16,13 @@ export default function AppCard({ data, extendedView }: {
 
     const { data: icon } = useQuery({
         queryKey: [ 'appIcon', path ],
-        queryFn: async () => await window.ipc.getAppIcon(path),
+        queryFn: async () => await window.ipc.callAction('getAppIcon', path),
         refetchOnWindowFocus: false,
     });
 
     const { data: isRunning = false } = useQuery({
         queryKey: [ 'appRunning', path ],
-        queryFn: async () => await window.ipc.isAppRunning(path),
+        queryFn: async () => await window.ipc.callAction('isAppRunning', path),
         refetchOnWindowFocus: false,
         // Check running state more frequently
         refetchInterval: 1000,
@@ -68,11 +68,11 @@ export default function AppCard({ data, extendedView }: {
                     {...isRunning ? {
                         children: 'Stop',
                         startIcon: <Stop />,
-                        onClick: () => window.ipc.stopApp([ path ]),
+                        onClick: () => window.ipc.callAction('stopApp', [ path ]),
                     } : {
                         children: 'Start',
                         startIcon: <PlayArrow />,
-                        onClick: () => window.ipc.launchApp([ path ]),
+                        onClick: () => window.ipc.callAction('launchApp', [ path ]),
                     }}
                 />
                 <IconButton onClick={() => setShowSettingsDialog(true)}><Settings /></IconButton>

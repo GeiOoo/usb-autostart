@@ -24,7 +24,7 @@ export default function AddApplications() {
 
     const { data: runningProcesses = [], isFetching } = useQuery({
         queryKey: [ 'runningProcesses', debouncedSearch ],
-        queryFn: async () => debouncedSearch ? await window.ipc.getRunningProcesses(debouncedSearch) : [],
+        queryFn: async () => debouncedSearch ? await window.ipc.callAction('getRunningProcesses', debouncedSearch) : [],
         enabled: debouncedSearch.length > 0,
     });
 
@@ -79,7 +79,7 @@ export default function AddApplications() {
     );
 
     async function onAddApps(paths?: string[]) {
-        const pathList = paths ?? await window.ipc.openFileDialog();
+        const pathList = paths ?? await window.ipc.callAction('openFileDialog');
 
         const currentApps = await db.app.toArray();
         const appList = pathList
