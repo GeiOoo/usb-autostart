@@ -40,7 +40,7 @@ export default function AppCardSettings({ data, closeDialog }: {
     );
 
     async function handleSelectFile() {
-        const path = await window.ipc.openFileDialog();
+        const path = await window.ipc.callAction('openFileDialog');
         console.log({ path });
 
         if (path.length > 0) {

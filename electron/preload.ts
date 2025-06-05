@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { IpcHandlerClient } from './registerIpcHandler';
 
 const handler = {
     send(channel: string, value: unknown) {
@@ -12,29 +13,8 @@ const handler = {
             ipcRenderer.removeListener(channel, subscription);
         };
     },
-    openFileDialog(): Promise<string[]> {
-        return ipcRenderer.invoke('open-file-dialog');
-    },
-    getAppIcon(path: string): Promise<string> {
-        return ipcRenderer.invoke('get-app-icon', path);
-    },
-    isAppRunning(path: string): Promise<boolean> {
-        return ipcRenderer.invoke('is-app-running', path);
-    },
-    launchApp(path: string[]): Promise<void> {
-        return ipcRenderer.invoke('launch-app', path);
-    },
-    stopApp(path: string[]): Promise<void> {
-        return ipcRenderer.invoke('stop-app', path);
-    },
-    isAutoStartEnabled(): Promise<boolean> {
-        return ipcRenderer.invoke('is-autostart-enabled');
-    },
-    setAutoStart(enable: boolean): Promise<void> {
-        return ipcRenderer.invoke('set-autostart', enable);
-    },
-    getRunningProcesses(search: string): Promise<{ name: string, path: string }[]> {
-        return ipcRenderer.invoke('get-running-processes', search);
+    async callAction<T extends keyof IpcHandlerClient>(action: T, ...args: Parameters<IpcHandlerClient[T]>): Promise<ReturnType<IpcHandlerClient[T]>> {
+        return await ipcRenderer.invoke(action, ...args);
     },
 };
 

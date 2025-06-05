@@ -29,11 +29,11 @@ export const { VITE_DEV_SERVER_URL } = process.env;
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST;
 
-let win: BrowserWindow | null;
+let win: BrowserWindow | null = null;
 
 // Add isQuitting flag at the top level
 let isQuitting = false;
-let tray: Tray;
+let tray: Tray | null = null;
 
 function createWindow() {
     win = new BrowserWindow({
@@ -113,10 +113,6 @@ app.on('activate', () => {
 });
 
 app.whenReady().then(createWindow).then(() => {
-    if (!isProd) {
-        return;
-    }
-
     tray = new Tray(path.join(process.env.VITE_PUBLIC!, 'favicon.ico'));
 
     // Function to update the context menu
@@ -152,7 +148,7 @@ app.whenReady().then(createWindow).then(() => {
                 app.quit();
             },
         } ]);
-        tray.setContextMenu(contextMenu);
+        tray?.setContextMenu(contextMenu);
     };
 
     // Initialize the context menu
@@ -166,6 +162,6 @@ app.whenReady().then(createWindow).then(() => {
         }
     });
     tray.setToolTip('Electron App');
-});
 
-registerIpcHandler(app);
+    registerIpcHandler(win, tray);
+});
