@@ -163,5 +163,5 @@ app.whenReady().then(createWindow).then(() => {
     });
     tray.setToolTip('Electron App');
 
-    registerIpcHandler(app, win, tray);
+    registerIpcHandler(win, tray);
 });
